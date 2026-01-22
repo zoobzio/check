@@ -31,22 +31,22 @@ linters:
     - prealloc
     - copyloopvar
 
-linters-settings:
-  errcheck:
-    check-type-assertions: true
-  govet:
-    enable-all: true
-  dupl:
-    threshold: 150
-  goconst:
-    min-len: 3
-    min-occurrences: 3
+  settings:
+    errcheck:
+      check-type-assertions: true
+    govet:
+      enable-all: true
+    dupl:
+      threshold: 150
+    goconst:
+      min-len: 3
+      min-occurrences: 3
 
-issues:
-  exclude-rules:
-    # Exclude some linters from running on test files
-    - path: _test\.go
-      linters:
-        - dupl
-        - goconst
-        - govet
+  exclusions:
+    rules:
+      # Exclude some linters from running on test files
+      - path: _test\.go
+        linters:
+          - dupl
+          - goconst
+          - govet

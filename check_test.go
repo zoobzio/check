@@ -45,7 +45,8 @@ func TestErrors(t *testing.T) {
 		if len(unwrapped) != 1 {
 			t.Error("unwrap failed: wrong length")
 		}
-		if unwrapped[0].(*FieldError) != e1 { //nolint:errorlint // testing identity
+		fe, ok := unwrapped[0].(*FieldError) //nolint:errorlint // testing identity
+		if !ok || fe != e1 {
 			t.Error("unwrap failed: wrong error")
 		}
 	})
@@ -98,7 +99,8 @@ func TestFirst(t *testing.T) {
 		e1 := &FieldError{Field: "a", Message: "first"}
 		e2 := &FieldError{Field: "b", Message: "second"}
 		err := First(nil, e1, e2)
-		if err.(*FieldError) != e1 { //nolint:errorlint // testing identity
+		fe, ok := err.(*FieldError) //nolint:errorlint // testing identity
+		if !ok || fe != e1 {
 			t.Error("expected first error")
 		}
 	})
