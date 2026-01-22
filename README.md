@@ -6,7 +6,7 @@
 [![CodeQL](https://github.com/zoobzio/check/workflows/CodeQL/badge.svg)](https://github.com/zoobzio/check/security/code-scanning)
 [![Go Reference](https://pkg.go.dev/badge/github.com/zoobzio/check.svg)](https://pkg.go.dev/github.com/zoobzio/check)
 [![License](https://img.shields.io/github/license/zoobzio/check)](LICENSE)
-[![Go Version](https://img.shields.io/github/go-mod-go-version/zoobzio/check)](go.mod)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/zoobzio/check)](go.mod)
 [![Release](https://img.shields.io/github/v/release/zoobzio/check)](https://github.com/zoobzio/check/releases)
 
 Zero-reflection validation primitives for Go.
@@ -122,17 +122,17 @@ func main() {
 
 ## Capabilities
 
-| Category    | Functions                                                                                     |
-| ----------- | --------------------------------------------------------------------------------------------- |
-| Strings     | `Required`, `MinLen`, `MaxLen`, `Match`, `Prefix`, `Suffix`, `OneOf`, `Alpha`, `Slug`, etc.   |
-| Numbers     | `Min`, `Max`, `Between`, `Positive`, `Negative`, `NonZero`, `MultipleOf`, `Percentage`        |
-| Comparison  | `Equal`, `NotEqual`, `GreaterThan`, `LessThan`, `EqualField`, `GreaterThanField`              |
-| Slices      | `NotEmpty`, `MinItems`, `Unique`, `ContainsAll`, `Each`, `AllSatisfy`, `Subset`               |
-| Maps        | `NotEmptyMap`, `HasKey`, `HasKeys`, `OnlyKeys`, `EachKey`, `EachMapValue`, `UniqueValues`     |
-| Pointers    | `NotNil`, `Nil`, `NilOr`, `RequiredPtr`, `DefaultOr`, `Deref`                                 |
-| Time        | `Before`, `After`, `InPast`, `InFuture`, `BetweenTime`, `WithinDuration`, `NotWeekend`        |
-| Formats     | `Email`, `URL`, `UUID`, `IP`, `CIDR`, `Semver`, `E164`, `CreditCard`, `JSON`, `Base64`        |
-| Aggregation | `All` (collect all errors), `First` (fail-fast), `Merge` (combine results)                   |
+| Category    | Functions                                                                                   |
+| ----------- | ------------------------------------------------------------------------------------------- |
+| Strings     | `Required`, `MinLen`, `MaxLen`, `Match`, `Prefix`, `Suffix`, `OneOf`, `Alpha`, `Slug`, etc. |
+| Numbers     | `Min`, `Max`, `Between`, `Positive`, `Negative`, `NonZero`, `MultipleOf`, `Percentage`      |
+| Comparison  | `Equal`, `NotEqual`, `GreaterThan`, `LessThan`, `EqualField`, `GreaterThanField`            |
+| Slices      | `NotEmpty`, `MinItems`, `Unique`, `ContainsAll`, `Each`, `AllSatisfy`, `Subset`             |
+| Maps        | `NotEmptyMap`, `HasKey`, `HasKeys`, `OnlyKeys`, `EachKey`, `EachMapValue`, `UniqueValues`   |
+| Pointers    | `NotNil`, `Nil`, `NilOr`, `RequiredPtr`, `DefaultOr`, `Deref`                               |
+| Time        | `Before`, `After`, `InPast`, `InFuture`, `BetweenTime`, `WithinDuration`, `NotWeekend`      |
+| Formats     | `Email`, `URL`, `UUID`, `IP`, `CIDR`, `Semver`, `E164`, `CreditCard`, `JSON`, `Base64`      |
+| Aggregation | `All` (collect all errors), `First` (fail-fast), `Merge` (combine results)                  |
 
 ## Validation Tracking
 
