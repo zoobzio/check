@@ -8,7 +8,7 @@
 # Test files
 *.test
 *.out
-coverage.*
+coverage.out
 coverage/
 
 # IDE files
