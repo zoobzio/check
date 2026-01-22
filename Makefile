@@ -50,7 +50,7 @@ install-tools: ## Install dev tools
 # Install git hooks
 install-hooks: ## Install git hooks
 	@echo "Installing pre-commit hook..."
-	@echo '#!/bin/sh\nmake check' > .git/hooks/pre-commit
+	@printf '#!/bin/sh\nmake check\n' > .git/hooks/pre-commit
 	@chmod +x .git/hooks/pre-commit
 	@echo "Pre-commit hook installed"
 
