@@ -23,9 +23,9 @@ func TestBefore(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := Before(tt.value, tt.ref, "field")
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Before() = %v, wantErr %v", err, tt.wantErr)
+			v := Before(tt.value, tt.ref, "field")
+			if v.Failed() != tt.wantErr {
+				t.Errorf("Before() failed = %v, wantErr %v", v.Failed(), tt.wantErr)
 			}
 		})
 	}
@@ -49,9 +49,9 @@ func TestAfter(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := After(tt.value, tt.ref, "field")
-			if (err != nil) != tt.wantErr {
-				t.Errorf("After() = %v, wantErr %v", err, tt.wantErr)
+			v := After(tt.value, tt.ref, "field")
+			if v.Failed() != tt.wantErr {
+				t.Errorf("After() failed = %v, wantErr %v", v.Failed(), tt.wantErr)
 			}
 		})
 	}
@@ -74,9 +74,9 @@ func TestBeforeOrEqual(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := BeforeOrEqual(tt.value, tt.ref, "field")
-			if (err != nil) != tt.wantErr {
-				t.Errorf("BeforeOrEqual() = %v, wantErr %v", err, tt.wantErr)
+			v := BeforeOrEqual(tt.value, tt.ref, "field")
+			if v.Failed() != tt.wantErr {
+				t.Errorf("BeforeOrEqual() failed = %v, wantErr %v", v.Failed(), tt.wantErr)
 			}
 		})
 	}
@@ -102,9 +102,9 @@ func TestBetweenTime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := BetweenTime(tt.value, start, end, "field")
-			if (err != nil) != tt.wantErr {
-				t.Errorf("BetweenTime() = %v, wantErr %v", err, tt.wantErr)
+			v := BetweenTime(tt.value, start, end, "field")
+			if v.Failed() != tt.wantErr {
+				t.Errorf("BetweenTime() failed = %v, wantErr %v", v.Failed(), tt.wantErr)
 			}
 		})
 	}
@@ -127,9 +127,9 @@ func TestWithinDuration(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := WithinDuration(tt.value, tt.dur, "field")
-			if (err != nil) != tt.wantErr {
-				t.Errorf("WithinDuration() = %v, wantErr %v", err, tt.wantErr)
+			v := WithinDuration(tt.value, tt.dur, "field")
+			if v.Failed() != tt.wantErr {
+				t.Errorf("WithinDuration() failed = %v, wantErr %v", v.Failed(), tt.wantErr)
 			}
 		})
 	}
@@ -151,9 +151,9 @@ func TestSameDay(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := SameDay(tt.value, tt.ref, "field")
-			if (err != nil) != tt.wantErr {
-				t.Errorf("SameDay() = %v, wantErr %v", err, tt.wantErr)
+			v := SameDay(tt.value, tt.ref, "field")
+			if v.Failed() != tt.wantErr {
+				t.Errorf("SameDay() failed = %v, wantErr %v", v.Failed(), tt.wantErr)
 			}
 		})
 	}
@@ -174,17 +174,17 @@ func TestWeekday(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := Weekday(tt.value, tt.day, "field")
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Weekday() = %v, wantErr %v", err, tt.wantErr)
+			v := Weekday(tt.value, tt.day, "field")
+			if v.Failed() != tt.wantErr {
+				t.Errorf("Weekday() failed = %v, wantErr %v", v.Failed(), tt.wantErr)
 			}
 		})
 	}
 }
 
 func TestNotWeekend(t *testing.T) {
-	monday := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)    // Monday
-	saturday := time.Date(2024, 1, 6, 12, 0, 0, 0, time.UTC)  // Saturday
+	monday := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)   // Monday
+	saturday := time.Date(2024, 1, 6, 12, 0, 0, 0, time.UTC) // Saturday
 
 	tests := []struct {
 		name    string
@@ -196,9 +196,9 @@ func TestNotWeekend(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := NotWeekend(tt.value, "field")
-			if (err != nil) != tt.wantErr {
-				t.Errorf("NotWeekend() = %v, wantErr %v", err, tt.wantErr)
+			v := NotWeekend(tt.value, "field")
+			if v.Failed() != tt.wantErr {
+				t.Errorf("NotWeekend() failed = %v, wantErr %v", v.Failed(), tt.wantErr)
 			}
 		})
 	}
@@ -215,9 +215,9 @@ func TestNotZeroTime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := NotZeroTime(tt.value, "field")
-			if (err != nil) != tt.wantErr {
-				t.Errorf("NotZeroTime() = %v, wantErr %v", err, tt.wantErr)
+			v := NotZeroTime(tt.value, "field")
+			if v.Failed() != tt.wantErr {
+				t.Errorf("NotZeroTime() failed = %v, wantErr %v", v.Failed(), tt.wantErr)
 			}
 		})
 	}
@@ -234,9 +234,9 @@ func TestDurationMin(t *testing.T) {
 		{15 * time.Minute, 30 * time.Minute, true},
 	}
 	for _, tt := range tests {
-		err := DurationMin(tt.value, tt.min, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("DurationMin(%v, %v) = %v, wantErr %v", tt.value, tt.min, err, tt.wantErr)
+		v := DurationMin(tt.value, tt.min, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("DurationMin(%v, %v) failed = %v, wantErr %v", tt.value, tt.min, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -252,9 +252,9 @@ func TestDurationMax(t *testing.T) {
 		{2 * time.Hour, time.Hour, true},
 	}
 	for _, tt := range tests {
-		err := DurationMax(tt.value, tt.max, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("DurationMax(%v, %v) = %v, wantErr %v", tt.value, tt.max, err, tt.wantErr)
+		v := DurationMax(tt.value, tt.max, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("DurationMax(%v, %v) failed = %v, wantErr %v", tt.value, tt.max, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -269,9 +269,9 @@ func TestDurationPositive(t *testing.T) {
 		{-time.Second, true},
 	}
 	for _, tt := range tests {
-		err := DurationPositive(tt.value, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("DurationPositive(%v) = %v, wantErr %v", tt.value, err, tt.wantErr)
+		v := DurationPositive(tt.value, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("DurationPositive(%v) failed = %v, wantErr %v", tt.value, v.Failed(), tt.wantErr)
 		}
 	}
 }

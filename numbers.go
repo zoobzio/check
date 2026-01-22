@@ -5,35 +5,39 @@ import (
 )
 
 // Min validates that a value is at least the minimum.
-func Min[T constraints.Ordered](v, minVal T, field string) error {
+func Min[T constraints.Ordered](v, minVal T, field string) *Validation {
+	var err error
 	if v < minVal {
-		return fieldErrf(field, "must be at least %v", minVal)
+		err = fieldErrf(field, "must be at least %v", minVal)
 	}
-	return nil
+	return validation(err, field, "min")
 }
 
 // Max validates that a value is at most the maximum.
-func Max[T constraints.Ordered](v, maxVal T, field string) error {
+func Max[T constraints.Ordered](v, maxVal T, field string) *Validation {
+	var err error
 	if v > maxVal {
-		return fieldErrf(field, "must be at most %v", maxVal)
+		err = fieldErrf(field, "must be at most %v", maxVal)
 	}
-	return nil
+	return validation(err, field, "max")
 }
 
 // Between validates that a value is within a range (inclusive).
-func Between[T constraints.Ordered](v, minVal, maxVal T, field string) error {
+func Between[T constraints.Ordered](v, minVal, maxVal T, field string) *Validation {
+	var err error
 	if v < minVal || v > maxVal {
-		return fieldErrf(field, "must be between %v and %v", minVal, maxVal)
+		err = fieldErrf(field, "must be between %v and %v", minVal, maxVal)
 	}
-	return nil
+	return validation(err, field, "min", "max")
 }
 
 // BetweenExclusive validates that a value is within a range (exclusive).
-func BetweenExclusive[T constraints.Ordered](v, minVal, maxVal T, field string) error {
+func BetweenExclusive[T constraints.Ordered](v, minVal, maxVal T, field string) *Validation {
+	var err error
 	if v <= minVal || v >= maxVal {
-		return fieldErrf(field, "must be between %v and %v (exclusive)", minVal, maxVal)
+		err = fieldErrf(field, "must be between %v and %v (exclusive)", minVal, maxVal)
 	}
-	return nil
+	return validation(err, field, "gt", "lt")
 }
 
 // Signed is a constraint for signed numeric types.
@@ -62,152 +66,175 @@ type Number interface {
 }
 
 // Positive validates that a value is greater than zero.
-func Positive[T Signed | Float](v T, field string) error {
+func Positive[T Signed | Float](v T, field string) *Validation {
+	var err error
 	if v <= 0 {
-		return fieldErr(field, "must be positive")
+		err = fieldErr(field, "must be positive")
 	}
-	return nil
+	return validation(err, field, "gt")
 }
 
 // Negative validates that a value is less than zero.
-func Negative[T Signed | Float](v T, field string) error {
+func Negative[T Signed | Float](v T, field string) *Validation {
+	var err error
 	if v >= 0 {
-		return fieldErr(field, "must be negative")
+		err = fieldErr(field, "must be negative")
 	}
-	return nil
+	return validation(err, field, "lt")
 }
 
 // NonNegative validates that a value is zero or greater.
-func NonNegative[T Signed | Float](v T, field string) error {
+func NonNegative[T Signed | Float](v T, field string) *Validation {
+	var err error
 	if v < 0 {
-		return fieldErr(field, "must not be negative")
+		err = fieldErr(field, "must not be negative")
 	}
-	return nil
+	return validation(err, field, "gte")
 }
 
 // NonPositive validates that a value is zero or less.
-func NonPositive[T Signed | Float](v T, field string) error {
+func NonPositive[T Signed | Float](v T, field string) *Validation {
+	var err error
 	if v > 0 {
-		return fieldErr(field, "must not be positive")
+		err = fieldErr(field, "must not be positive")
 	}
-	return nil
+	return validation(err, field, "lte")
 }
 
 // Zero validates that a value is exactly zero.
-func Zero[T Number](v T, field string) error {
+func Zero[T Number](v T, field string) *Validation {
+	var err error
 	if v != 0 {
-		return fieldErr(field, "must be zero")
+		err = fieldErr(field, "must be zero")
 	}
-	return nil
+	return validation(err, field, "eq")
 }
 
 // NonZero validates that a value is not zero.
-func NonZero[T Number](v T, field string) error {
+func NonZero[T Number](v T, field string) *Validation {
+	var err error
 	if v == 0 {
-		return fieldErr(field, "must not be zero")
+		err = fieldErr(field, "must not be zero")
 	}
-	return nil
+	return validation(err, field, "ne")
 }
 
 // MultipleOf validates that a value is a multiple of the given divisor.
-func MultipleOf[T Integer](v, divisor T, field string) error {
+func MultipleOf[T Integer](v, divisor T, field string) *Validation {
+	var err error
 	if divisor == 0 {
-		return fieldErr(field, "divisor must not be zero")
+		err = fieldErr(field, "divisor must not be zero")
+	} else if v%divisor != 0 {
+		err = fieldErrf(field, "must be a multiple of %v", divisor)
 	}
-	if v%divisor != 0 {
-		return fieldErrf(field, "must be a multiple of %v", divisor)
-	}
-	return nil
+	return validation(err, field, "multipleof")
 }
 
 // Even validates that an integer value is even.
-func Even[T Integer](v T, field string) error {
+func Even[T Integer](v T, field string) *Validation {
+	var err error
 	if v%2 != 0 {
-		return fieldErr(field, "must be even")
+		err = fieldErr(field, "must be even")
 	}
-	return nil
+	return validation(err, field, "even")
 }
 
 // Odd validates that an integer value is odd.
-func Odd[T Integer](v T, field string) error {
+func Odd[T Integer](v T, field string) *Validation {
+	var err error
 	if v%2 == 0 {
-		return fieldErr(field, "must be odd")
+		err = fieldErr(field, "must be odd")
 	}
-	return nil
+	return validation(err, field, "odd")
 }
 
 // OneOfValues validates that a value is one of the allowed values.
-func OneOfValues[T comparable](v T, allowed []T, field string) error {
+func OneOfValues[T comparable](v T, allowed []T, field string) *Validation {
+	var err error
+	found := false
 	for _, a := range allowed {
 		if v == a {
-			return nil
+			found = true
+			break
 		}
 	}
-	return fieldErrf(field, "must be one of the allowed values")
+	if !found {
+		err = fieldErrf(field, "must be one of the allowed values")
+	}
+	return validation(err, field, "oneof")
 }
 
 // NotOneOfValues validates that a value is not one of the disallowed values.
-func NotOneOfValues[T comparable](v T, disallowed []T, field string) error {
+func NotOneOfValues[T comparable](v T, disallowed []T, field string) *Validation {
+	var err error
 	for _, d := range disallowed {
 		if v == d {
-			return fieldErr(field, "must not be one of the disallowed values")
+			err = fieldErr(field, "must not be one of the disallowed values")
+			break
 		}
 	}
-	return nil
+	return validation(err, field, "notoneof")
 }
 
 // GreaterThan validates that a value is strictly greater than the threshold.
-func GreaterThan[T constraints.Ordered](v, threshold T, field string) error {
+func GreaterThan[T constraints.Ordered](v, threshold T, field string) *Validation {
+	var err error
 	if v <= threshold {
-		return fieldErrf(field, "must be greater than %v", threshold)
+		err = fieldErrf(field, "must be greater than %v", threshold)
 	}
-	return nil
+	return validation(err, field, "gt")
 }
 
 // LessThan validates that a value is strictly less than the threshold.
-func LessThan[T constraints.Ordered](v, threshold T, field string) error {
+func LessThan[T constraints.Ordered](v, threshold T, field string) *Validation {
+	var err error
 	if v >= threshold {
-		return fieldErrf(field, "must be less than %v", threshold)
+		err = fieldErrf(field, "must be less than %v", threshold)
 	}
-	return nil
+	return validation(err, field, "lt")
 }
 
 // GreaterThanOrEqual validates that a value is greater than or equal to the threshold.
-func GreaterThanOrEqual[T constraints.Ordered](v, threshold T, field string) error {
+func GreaterThanOrEqual[T constraints.Ordered](v, threshold T, field string) *Validation {
+	var err error
 	if v < threshold {
-		return fieldErrf(field, "must be greater than or equal to %v", threshold)
+		err = fieldErrf(field, "must be greater than or equal to %v", threshold)
 	}
-	return nil
+	return validation(err, field, "gte")
 }
 
 // LessThanOrEqual validates that a value is less than or equal to the threshold.
-func LessThanOrEqual[T constraints.Ordered](v, threshold T, field string) error {
+func LessThanOrEqual[T constraints.Ordered](v, threshold T, field string) *Validation {
+	var err error
 	if v > threshold {
-		return fieldErrf(field, "must be less than or equal to %v", threshold)
+		err = fieldErrf(field, "must be less than or equal to %v", threshold)
 	}
-	return nil
+	return validation(err, field, "lte")
 }
 
 // Percentage validates that a value is between 0 and 100.
-func Percentage[T Number](v T, field string) error {
+func Percentage[T Number](v T, field string) *Validation {
+	var err error
 	if v < 0 || v > 100 {
-		return fieldErr(field, "must be a percentage (0-100)")
+		err = fieldErr(field, "must be a percentage (0-100)")
 	}
-	return nil
+	return validation(err, field, "min", "max")
 }
 
 // PortNumber validates that a value is a valid port number (1-65535).
-func PortNumber(v int, field string) error {
+func PortNumber(v int, field string) *Validation {
+	var err error
 	if v < 1 || v > 65535 {
-		return fieldErr(field, "must be a valid port number (1-65535)")
+		err = fieldErr(field, "must be a valid port number (1-65535)")
 	}
-	return nil
+	return validation(err, field, "port")
 }
 
 // HTTPStatusCode validates that a value is a valid HTTP status code (100-599).
-func HTTPStatusCode(v int, field string) error {
+func HTTPStatusCode(v int, field string) *Validation {
+	var err error
 	if v < 100 || v > 599 {
-		return fieldErr(field, "must be a valid HTTP status code (100-599)")
+		err = fieldErr(field, "must be a valid HTTP status code (100-599)")
 	}
-	return nil
+	return validation(err, field, "httpstatus")
 }

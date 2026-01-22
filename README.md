@@ -6,7 +6,7 @@
 [![CodeQL](https://github.com/zoobzio/check/workflows/CodeQL/badge.svg)](https://github.com/zoobzio/check/security/code-scanning)
 [![Go Reference](https://pkg.go.dev/badge/github.com/zoobzio/check.svg)](https://pkg.go.dev/github.com/zoobzio/check)
 [![License](https://img.shields.io/github/license/zoobzio/check)](LICENSE)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/zoobzio/check)](go.mod)
+[![Go Version](https://img.shields.io/github/go-mod-go-version/zoobzio/check)](go.mod)
 [![Release](https://img.shields.io/github/v/release/zoobzio/check)](https://github.com/zoobzio/check/releases)
 
 Zero-reflection validation primitives for Go.
@@ -22,7 +22,7 @@ type User struct {
     Username string
 }
 
-func (u User) Validate() error {
+func (u User) Validate() *check.Result {
     return check.All(
         check.Required(u.Email, "email"),
         check.Email(u.Email, "email"),
@@ -33,17 +33,20 @@ func (u User) Validate() error {
 }
 ```
 
-No magic. No reflection. No struct tags to parse at runtime. Just functions that return errors.
+No magic, no reflection, and no runtime struct-tag parsing—just functions that return validation results.
 
 ```go
-err := user.Validate()
-// email: must be a valid email address; age: must be between 13 and 120
+r := user.Validate()
+if r.Err() != nil {
+    fmt.Println(r.Err())
+    // email: must be a valid email address; age: must be between 13 and 120
 
-for _, fe := range check.GetFieldErrors(err) {
-    fmt.Printf("%s: %s\n", fe.Field, fe.Message)
+    for _, fe := range check.GetFieldErrors(r) {
+        fmt.Printf("%s: %s\n", fe.Field, fe.Message)
+    }
+    // email: must be a valid email address
+    // age: must be between 13 and 120
 }
-// email: must be a valid email address
-// age: must be between 13 and 120
 ```
 
 Validation logic lives where you can see it, test it, and refactor it.
@@ -73,7 +76,7 @@ type Order struct {
     Email    string
 }
 
-func (o Order) Validate() error {
+func (o Order) Validate() *check.Result {
     return check.All(
         check.Required(o.ID, "id"),
         check.UUID(o.ID, "id"),
@@ -91,25 +94,25 @@ func main() {
         Email:    "invalid",
     }
 
-    err := order.Validate()
-    if err != nil {
+    r := order.Validate()
+    if r.Err() != nil {
         // All errors collected
-        fmt.Println(err)
+        fmt.Println(r.Err())
         // id: must be a valid UUID; total: must be positive; quantity: must be between 1 and 100; email: must be a valid email address
 
         // Inspect individually
-        for _, fe := range check.GetFieldErrors(err) {
+        for _, fe := range check.GetFieldErrors(r) {
             fmt.Printf("Field %q: %s\n", fe.Field, fe.Message)
         }
 
         // Check specific fields
-        if check.HasField(err, "email") {
+        if check.HasField(r, "email") {
             fmt.Println("Email validation failed")
         }
     }
 
     // Fail-fast alternative
-    err = check.First(
+    r = check.First(
         check.Required(order.ID, "id"),
         check.UUID(order.ID, "id"),
     )
@@ -129,7 +132,36 @@ func main() {
 | Pointers    | `NotNil`, `Nil`, `NilOr`, `RequiredPtr`, `DefaultOr`, `Deref`                                 |
 | Time        | `Before`, `After`, `InPast`, `InFuture`, `BetweenTime`, `WithinDuration`, `NotWeekend`        |
 | Formats     | `Email`, `URL`, `UUID`, `IP`, `CIDR`, `Semver`, `E164`, `CreditCard`, `JSON`, `Base64`        |
-| Aggregation | `All` (collect all errors), `First` (fail-fast)                                               |
+| Aggregation | `All` (collect all errors), `First` (fail-fast), `Merge` (combine results)                   |
+
+## Validation Tracking
+
+Check tracks which validators were applied to which fields, enabling downstream verification of validation coverage.
+
+```go
+r := check.All(
+    check.Required(email, "email"),
+    check.Email(email, "email"),
+    check.Between(age, 13, 120, "age"),
+)
+
+// Check if specific validators ran
+r.HasValidator("email", "required") // true
+r.HasValidator("email", "email")    // true
+r.HasValidator("age", "min")        // true (Between reports min and max)
+r.HasValidator("age", "max")        // true
+
+// Get all validators for a field
+r.ValidatorsFor("email") // []string{"required", "email"}
+
+// Get all validated fields
+r.Fields() // []string{"email", "age"}
+
+// Get full tracking map
+r.Applied() // map[string][]string{"email": {"required", "email"}, "age": {"min", "max"}}
+```
+
+This enables tools to verify that declared validation rules match actual runtime validation.
 
 ## Why check?
 
@@ -137,6 +169,7 @@ func main() {
 - **Type-safe generics** — `Min[T]`, `Between[T]`, `Each[T]` catch type errors at compile time
 - **Composable** — `All()` collects errors, `First()` fails fast, nest them freely
 - **Field-aware errors** — every error knows which field failed and why
+- **Validation tracking** — verify which validators ran on which fields
 - **No struct tags** — validation rules are code, not strings parsed at runtime
 - **Minimal dependencies** — only `golang.org/x/exp` for generic constraints
 
@@ -148,21 +181,21 @@ Your validation rules live in methods alongside your types. They're testable, re
 
 ```go
 // Conditional validation — just Go code
-func (o Order) Validate() error {
-    errs := []error{
+func (o Order) Validate() *check.Result {
+    validations := []*check.Validation{
         check.Required(o.ID, "id"),
         check.Positive(o.Total, "total"),
     }
 
     if o.ShipmentType == "express" {
-        errs = append(errs, check.Required(o.ExpressCode, "express_code"))
+        validations = append(validations, check.Required(o.ExpressCode, "express_code"))
     }
 
-    return check.All(errs...)
+    return check.All(validations...)
 }
 
 // Cross-field validation — just compare values
-func (r DateRange) Validate() error {
+func (r DateRange) Validate() *check.Result {
     return check.All(
         check.NotZeroTime(r.Start, "start"),
         check.NotZeroTime(r.End, "end"),
@@ -171,12 +204,16 @@ func (r DateRange) Validate() error {
 }
 
 // Slice element validation — apply checks to each item
-func (c Cart) Validate() error {
-    return check.All(
-        check.NotEmpty(c.Items, "items"),
-        check.Each(c.Items, func(item Item, i int) error {
-            return item.Validate()
-        }, "items"),
+func (c Cart) Validate() *check.Result {
+    return check.Merge(
+        check.All(check.NotEmpty(c.Items, "items")),
+        check.Each(c.Items, func(item Item, i int) *check.Validation {
+            field := fmt.Sprintf("items[%d]", i)
+            if item.Quantity <= 0 {
+                return check.Positive(item.Quantity, field)
+            }
+            return nil
+        }),
     )
 }
 ```

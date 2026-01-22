@@ -1,164 +1,180 @@
 package check
 
 // NotEmptyMap validates that a map is not empty.
-func NotEmptyMap[K comparable, V any](v map[K]V, field string) error {
+func NotEmptyMap[K comparable, V any](v map[K]V, field string) *Validation {
+	var err error
 	if len(v) == 0 {
-		return fieldErr(field, "must not be empty")
+		err = fieldErr(field, "must not be empty")
 	}
-	return nil
+	return validation(err, field, "required")
 }
 
 // EmptyMap validates that a map is empty.
-func EmptyMap[K comparable, V any](v map[K]V, field string) error {
+func EmptyMap[K comparable, V any](v map[K]V, field string) *Validation {
+	var err error
 	if len(v) != 0 {
-		return fieldErr(field, "must be empty")
+		err = fieldErr(field, "must be empty")
 	}
-	return nil
+	return validation(err, field, "empty")
 }
 
 // MinKeys validates minimum number of keys in a map.
-func MinKeys[K comparable, V any](v map[K]V, minKeys int, field string) error {
+func MinKeys[K comparable, V any](v map[K]V, minKeys int, field string) *Validation {
+	var err error
 	if len(v) < minKeys {
-		return fieldErrf(field, "must have at least %d keys", minKeys)
+		err = fieldErrf(field, "must have at least %d keys", minKeys)
 	}
-	return nil
+	return validation(err, field, "minkeys")
 }
 
 // MaxKeys validates maximum number of keys in a map.
-func MaxKeys[K comparable, V any](v map[K]V, maxKeys int, field string) error {
+func MaxKeys[K comparable, V any](v map[K]V, maxKeys int, field string) *Validation {
+	var err error
 	if len(v) > maxKeys {
-		return fieldErrf(field, "must have at most %d keys", maxKeys)
+		err = fieldErrf(field, "must have at most %d keys", maxKeys)
 	}
-	return nil
+	return validation(err, field, "maxkeys")
 }
 
 // ExactKeys validates exact number of keys in a map.
-func ExactKeys[K comparable, V any](v map[K]V, count int, field string) error {
+func ExactKeys[K comparable, V any](v map[K]V, count int, field string) *Validation {
+	var err error
 	if len(v) != count {
-		return fieldErrf(field, "must have exactly %d keys", count)
+		err = fieldErrf(field, "must have exactly %d keys", count)
 	}
-	return nil
+	return validation(err, field, "len")
 }
 
 // KeysBetween validates map size is within a range (inclusive).
-func KeysBetween[K comparable, V any](v map[K]V, minKeys, maxKeys int, field string) error {
+func KeysBetween[K comparable, V any](v map[K]V, minKeys, maxKeys int, field string) *Validation {
+	var err error
 	l := len(v)
 	if l < minKeys || l > maxKeys {
-		return fieldErrf(field, "must have between %d and %d keys", minKeys, maxKeys)
+		err = fieldErrf(field, "must have between %d and %d keys", minKeys, maxKeys)
 	}
-	return nil
+	return validation(err, field, "minkeys", "maxkeys")
 }
 
 // HasKey validates that a map contains the given key.
-func HasKey[K comparable, V any](v map[K]V, key K, field string) error {
+func HasKey[K comparable, V any](v map[K]V, key K, field string) *Validation {
+	var err error
 	if _, exists := v[key]; !exists {
-		return fieldErrf(field, "must contain key %v", key)
+		err = fieldErrf(field, "must contain key %v", key)
 	}
-	return nil
+	return validation(err, field, "haskey")
 }
 
 // HasKeys validates that a map contains all the given keys.
-func HasKeys[K comparable, V any](v map[K]V, keys []K, field string) error {
+func HasKeys[K comparable, V any](v map[K]V, keys []K, field string) *Validation {
+	var err error
 	for _, key := range keys {
 		if _, exists := v[key]; !exists {
-			return fieldErr(field, "must contain all required keys")
+			err = fieldErr(field, "must contain all required keys")
+			break
 		}
 	}
-	return nil
+	return validation(err, field, "haskeys")
 }
 
 // HasAnyKey validates that a map contains at least one of the given keys.
-func HasAnyKey[K comparable, V any](v map[K]V, keys []K, field string) error {
+func HasAnyKey[K comparable, V any](v map[K]V, keys []K, field string) *Validation {
+	var err error
+	found := false
 	for _, key := range keys {
 		if _, exists := v[key]; exists {
-			return nil
+			found = true
+			break
 		}
 	}
-	return fieldErr(field, "must contain at least one of the required keys")
+	if !found {
+		err = fieldErr(field, "must contain at least one of the required keys")
+	}
+	return validation(err, field, "hasanykey")
 }
 
 // NotHasKey validates that a map does not contain the given key.
-func NotHasKey[K comparable, V any](v map[K]V, key K, field string) error {
+func NotHasKey[K comparable, V any](v map[K]V, key K, field string) *Validation {
+	var err error
 	if _, exists := v[key]; exists {
-		return fieldErrf(field, "must not contain key %v", key)
+		err = fieldErrf(field, "must not contain key %v", key)
 	}
-	return nil
+	return validation(err, field, "nothaskey")
 }
 
 // NotHasKeys validates that a map does not contain any of the given keys.
-func NotHasKeys[K comparable, V any](v map[K]V, keys []K, field string) error {
+func NotHasKeys[K comparable, V any](v map[K]V, keys []K, field string) *Validation {
+	var err error
 	for _, key := range keys {
 		if _, exists := v[key]; exists {
-			return fieldErr(field, "must not contain any of the forbidden keys")
+			err = fieldErr(field, "must not contain any of the forbidden keys")
+			break
 		}
 	}
-	return nil
+	return validation(err, field, "nothaskeys")
 }
 
 // OnlyKeys validates that a map only contains keys from the allowed set.
-func OnlyKeys[K comparable, V any](v map[K]V, allowed []K, field string) error {
+func OnlyKeys[K comparable, V any](v map[K]V, allowed []K, field string) *Validation {
+	var err error
 	set := make(map[K]struct{}, len(allowed))
 	for _, key := range allowed {
 		set[key] = struct{}{}
 	}
 	for key := range v {
 		if _, exists := set[key]; !exists {
-			return fieldErr(field, "must only contain allowed keys")
+			err = fieldErr(field, "must only contain allowed keys")
+			break
 		}
 	}
-	return nil
+	return validation(err, field, "onlykeys")
 }
 
 // EachKey applies a validation function to each key in a map.
-func EachKey[K comparable, V any](v map[K]V, fn func(K) error) error {
-	var errs Errors
+func EachKey[K comparable, V any](v map[K]V, fn func(K) *Validation) *Result {
+	validations := make([]*Validation, 0, len(v))
 	for key := range v {
-		if err := fn(key); err != nil {
-			errs = append(errs, err)
+		val := fn(key)
+		if val != nil {
+			validations = append(validations, val)
 		}
 	}
-	if len(errs) == 0 {
-		return nil
-	}
-	return errs
+	return All(validations...)
 }
 
 // EachMapValue applies a validation function to each value in a map.
-func EachMapValue[K comparable, V any](v map[K]V, fn func(V) error) error {
-	var errs Errors
+func EachMapValue[K comparable, V any](v map[K]V, fn func(V) *Validation) *Result {
+	validations := make([]*Validation, 0, len(v))
 	for _, val := range v {
-		if err := fn(val); err != nil {
-			errs = append(errs, err)
+		result := fn(val)
+		if result != nil {
+			validations = append(validations, result)
 		}
 	}
-	if len(errs) == 0 {
-		return nil
-	}
-	return errs
+	return All(validations...)
 }
 
 // EachEntry applies a validation function to each key-value pair in a map.
-func EachEntry[K comparable, V any](v map[K]V, fn func(K, V) error) error {
-	var errs Errors
+func EachEntry[K comparable, V any](v map[K]V, fn func(K, V) *Validation) *Result {
+	validations := make([]*Validation, 0, len(v))
 	for key, val := range v {
-		if err := fn(key, val); err != nil {
-			errs = append(errs, err)
+		result := fn(key, val)
+		if result != nil {
+			validations = append(validations, result)
 		}
 	}
-	if len(errs) == 0 {
-		return nil
-	}
-	return errs
+	return All(validations...)
 }
 
 // UniqueValues validates that all values in a map are unique.
-func UniqueValues[K, V comparable](v map[K]V, field string) error {
+func UniqueValues[K, V comparable](v map[K]V, field string) *Validation {
+	var err error
 	seen := make(map[V]struct{}, len(v))
 	for _, val := range v {
 		if _, exists := seen[val]; exists {
-			return fieldErr(field, "must have unique values")
+			err = fieldErr(field, "must have unique values")
+			break
 		}
 		seen[val] = struct{}{}
 	}
-	return nil
+	return validation(err, field, "unique")
 }

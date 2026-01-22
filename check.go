@@ -43,55 +43,209 @@ func (e Errors) Unwrap() []error {
 	return e
 }
 
-// All collects all non-nil errors into a single Errors value.
-// Returns nil if all errors are nil.
-func All(errs ...error) error {
-	var collected Errors
-	for _, err := range errs {
-		if err != nil {
-			// Flatten nested Errors
+// Validation represents the result of a single validation check.
+// It tracks both the outcome (error or nil) and metadata about what was validated.
+type Validation struct {
+	err        error
+	field      string
+	validators []string
+}
+
+// Error implements the error interface.
+func (v *Validation) Error() string {
+	if v == nil || v.err == nil {
+		return ""
+	}
+	return v.err.Error()
+}
+
+// Unwrap returns the underlying error for errors.Is/As compatibility.
+func (v *Validation) Unwrap() error {
+	if v == nil {
+		return nil
+	}
+	return v.err
+}
+
+// Failed returns true if the validation failed.
+func (v *Validation) Failed() bool {
+	return v != nil && v.err != nil
+}
+
+// Result contains the aggregated outcome of multiple validations.
+type Result struct {
+	err     error
+	applied map[string][]string
+}
+
+// Err returns the validation error (nil if validation passed).
+func (r *Result) Err() error {
+	if r == nil {
+		return nil
+	}
+	return r.err
+}
+
+// Error implements the error interface for convenience.
+func (r *Result) Error() string {
+	if r == nil || r.err == nil {
+		return ""
+	}
+	return r.err.Error()
+}
+
+// Unwrap implements errors.Unwrap for compatibility.
+func (r *Result) Unwrap() error {
+	if r == nil {
+		return nil
+	}
+	return r.err
+}
+
+// Applied returns a map of field names to validator names that were executed.
+func (r *Result) Applied() map[string][]string {
+	if r == nil {
+		return nil
+	}
+	return r.applied
+}
+
+// HasValidator checks if a specific validator was applied to a field.
+func (r *Result) HasValidator(field, validator string) bool {
+	if r == nil || r.applied == nil {
+		return false
+	}
+	validators, ok := r.applied[field]
+	if !ok {
+		return false
+	}
+	for _, v := range validators {
+		if v == validator {
+			return true
+		}
+	}
+	return false
+}
+
+// ValidatorsFor returns all validators applied to a specific field.
+func (r *Result) ValidatorsFor(field string) []string {
+	if r == nil || r.applied == nil {
+		return nil
+	}
+	return r.applied[field]
+}
+
+// Fields returns all field names that had validators applied.
+func (r *Result) Fields() []string {
+	if r == nil || r.applied == nil {
+		return nil
+	}
+	fields := make([]string, 0, len(r.applied))
+	for field := range r.applied {
+		fields = append(fields, field)
+	}
+	return fields
+}
+
+// validation creates a Validation result for a single validator.
+func validation(err error, field string, validators ...string) *Validation {
+	return &Validation{
+		err:        err,
+		field:      field,
+		validators: validators,
+	}
+}
+
+// All collects all validations and returns a Result.
+// Tracks both successful and failed validations for metadata purposes.
+func All(validations ...*Validation) *Result {
+	applied := make(map[string][]string)
+	var errs []error
+
+	for _, v := range validations {
+		if v == nil {
+			continue
+		}
+
+		applied[v.field] = append(applied[v.field], v.validators...)
+
+		if v.err != nil {
+			errs = append(errs, v.err)
+		}
+	}
+
+	var err error
+	if len(errs) > 0 {
+		err = Errors(errs)
+	}
+
+	return &Result{err: err, applied: applied}
+}
+
+// First returns a Result with the first failed validation, or nil error if all pass.
+// Still tracks all validations that were attempted up to and including the failure.
+func First(validations ...*Validation) *Result {
+	applied := make(map[string][]string)
+
+	for _, v := range validations {
+		if v == nil {
+			continue
+		}
+
+		applied[v.field] = append(applied[v.field], v.validators...)
+
+		if v.err != nil {
+			return &Result{err: v.err, applied: applied}
+		}
+	}
+
+	return &Result{err: nil, applied: applied}
+}
+
+// Merge combines multiple Results into one.
+func Merge(results ...*Result) *Result {
+	applied := make(map[string][]string)
+	var errs []error
+
+	for _, r := range results {
+		if r == nil {
+			continue
+		}
+		for field, validators := range r.applied {
+			applied[field] = append(applied[field], validators...)
+		}
+		if r.err != nil {
 			var nested Errors
-			if errors.As(err, &nested) {
-				collected = append(collected, nested...)
+			if errors.As(r.err, &nested) {
+				errs = append(errs, nested...)
 			} else {
-				collected = append(collected, err)
+				errs = append(errs, r.err)
 			}
 		}
 	}
-	if len(collected) == 0 {
-		return nil
+
+	var err error
+	if len(errs) > 0 {
+		err = Errors(errs)
 	}
-	return collected
+	return &Result{err: err, applied: applied}
 }
 
-// First returns the first non-nil error, or nil if all are nil.
-// Use this when you want fail-fast behavior instead of collecting all errors.
-func First(errs ...error) error {
-	for _, err := range errs {
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// HasErrors checks if an error is non-nil.
+// HasErrors checks if a Result has any errors.
 // Convenience function for conditional validation flows.
-func HasErrors(err error) bool {
-	return err != nil
+func HasErrors(r *Result) bool {
+	return r != nil && r.err != nil
 }
 
-// GetFieldErrors extracts all FieldError values from an error.
-// Works with both single FieldError and Errors collections.
-func GetFieldErrors(err error) []*FieldError {
-	if err == nil {
+// GetFieldErrors extracts all FieldError values from a Result.
+func GetFieldErrors(r *Result) []*FieldError {
+	if r == nil || r.err == nil {
 		return nil
 	}
 	var result []*FieldError
 
-	// Check if it's an Errors collection first
 	var errs Errors
-	if errors.As(err, &errs) {
+	if errors.As(r.err, &errs) {
 		for _, e := range errs {
 			var fe *FieldError
 			if errors.As(e, &fe) {
@@ -101,17 +255,16 @@ func GetFieldErrors(err error) []*FieldError {
 		return result
 	}
 
-	// Otherwise check if it's a single FieldError
 	var fe *FieldError
-	if errors.As(err, &fe) {
+	if errors.As(r.err, &fe) {
 		result = append(result, fe)
 	}
 	return result
 }
 
 // FieldNames returns all field names that have errors.
-func FieldNames(err error) []string {
-	fes := GetFieldErrors(err)
+func FieldNames(r *Result) []string {
+	fes := GetFieldErrors(r)
 	names := make([]string, 0, len(fes))
 	for _, fe := range fes {
 		names = append(names, fe.Field)
@@ -119,9 +272,9 @@ func FieldNames(err error) []string {
 	return names
 }
 
-// HasField checks if the error contains a validation error for the given field.
-func HasField(err error, field string) bool {
-	for _, fe := range GetFieldErrors(err) {
+// HasField checks if the Result contains a validation error for the given field.
+func HasField(r *Result, field string) bool {
+	for _, fe := range GetFieldErrors(r) {
 		if fe.Field == field {
 			return true
 		}
