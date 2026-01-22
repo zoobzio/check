@@ -1,6 +1,6 @@
 repository:
   name: check
-  description: Zero-dependency validation utilities for Go
+  description: Lightweight validation utilities for Go
   homepage: https://github.com/zoobzio/check
   has_wiki: true
   has_downloads: true

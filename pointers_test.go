@@ -1,7 +1,6 @@
 package check
 
 import (
-	"errors"
 	"testing"
 )
 
@@ -17,9 +16,9 @@ func TestNotNil(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := NotNil(tt.value, "field")
-			if (err != nil) != tt.wantErr {
-				t.Errorf("NotNil() = %v, wantErr %v", err, tt.wantErr)
+			v := NotNil(tt.value, "field")
+			if v.Failed() != tt.wantErr {
+				t.Errorf("NotNil() failed = %v, wantErr %v", v.Failed(), tt.wantErr)
 			}
 		})
 	}
@@ -37,9 +36,9 @@ func TestNil(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := Nil(tt.value, "field")
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Nil() = %v, wantErr %v", err, tt.wantErr)
+			v := Nil(tt.value, "field")
+			if v.Failed() != tt.wantErr {
+				t.Errorf("Nil() failed = %v, wantErr %v", v.Failed(), tt.wantErr)
 			}
 		})
 	}
@@ -47,97 +46,121 @@ func TestNil(t *testing.T) {
 
 func TestNilOr(t *testing.T) {
 	t.Run("nil passes", func(t *testing.T) {
-		err := NilOr[int](nil, func(_ int) error {
-			return errors.New("should not be called")
+		v := NilOr[int](nil, func(_ int) *Validation {
+			return validation(fieldErr("field", "should not be called"), "field", "test")
 		})
-		if err != nil {
-			t.Errorf("NilOr(nil) = %v, want nil", err)
+		if v != nil {
+			t.Errorf("NilOr(nil) = %v, want nil", v)
 		}
 	})
 
 	t.Run("valid value passes", func(t *testing.T) {
 		val := 42
-		err := NilOr(&val, func(v int) error {
+		v := NilOr(&val, func(v int) *Validation {
 			if v < 0 {
-				return errors.New("must be positive")
+				return validation(fieldErr("field", "must be positive"), "field", "positive")
 			}
-			return nil
+			return validation(nil, "field", "positive")
 		})
-		if err != nil {
-			t.Errorf("NilOr(42) = %v, want nil", err)
+		if v.Failed() {
+			t.Errorf("NilOr(42) failed, want pass")
 		}
 	})
 
 	t.Run("invalid value fails", func(t *testing.T) {
 		val := -1
-		err := NilOr(&val, func(v int) error {
+		v := NilOr(&val, func(v int) *Validation {
 			if v < 0 {
-				return errors.New("must be positive")
+				return validation(fieldErr("field", "must be positive"), "field", "positive")
 			}
-			return nil
+			return validation(nil, "field", "positive")
 		})
-		if err == nil {
-			t.Error("NilOr(-1) = nil, want error")
+		if !v.Failed() {
+			t.Error("NilOr(-1) = pass, want fail")
 		}
 	})
 }
 
 func TestNilOrField(t *testing.T) {
 	t.Run("nil passes", func(t *testing.T) {
-		err := NilOrField[string](nil, Required, "name")
-		if err != nil {
-			t.Errorf("NilOrField(nil) = %v, want nil", err)
+		v := NilOrField[string](nil, Required, "name")
+		if v != nil {
+			t.Errorf("NilOrField(nil) = %v, want nil", v)
 		}
 	})
 
 	t.Run("valid value passes", func(t *testing.T) {
 		val := "hello"
-		err := NilOrField(&val, Required, "name")
-		if err != nil {
-			t.Errorf("NilOrField(hello) = %v, want nil", err)
+		v := NilOrField(&val, Required, "name")
+		if v.Failed() {
+			t.Errorf("NilOrField(hello) failed, want pass")
 		}
 	})
 
 	t.Run("invalid value fails", func(t *testing.T) {
 		val := ""
-		err := NilOrField(&val, Required, "name")
-		if err == nil {
-			t.Error("NilOrField('') = nil, want error")
+		v := NilOrField(&val, Required, "name")
+		if !v.Failed() {
+			t.Error("NilOrField('') = pass, want fail")
 		}
 	})
 }
 
 func TestRequiredPtr(t *testing.T) {
 	t.Run("nil fails", func(t *testing.T) {
-		err := RequiredPtr[int](nil, func(_ int) error { return nil }, "field")
-		if err == nil {
-			t.Error("RequiredPtr(nil) = nil, want error")
+		v := RequiredPtr[int](nil, func(_ int) *Validation { return nil }, "field")
+		if !v.Failed() {
+			t.Error("RequiredPtr(nil) = pass, want fail")
+		}
+		if v.validators[0] != "required" {
+			t.Error("should have required validator")
 		}
 	})
 
 	t.Run("valid value passes", func(t *testing.T) {
 		val := 42
-		err := RequiredPtr(&val, func(v int) error {
+		v := RequiredPtr(&val, func(v int) *Validation {
 			if v < 0 {
-				return errors.New("must be positive")
+				return validation(fieldErr("field", "must be positive"), "field", "positive")
 			}
-			return nil
+			return validation(nil, "field", "positive")
 		}, "field")
-		if err != nil {
-			t.Errorf("RequiredPtr(42) = %v, want nil", err)
+		if v.Failed() {
+			t.Errorf("RequiredPtr(42) failed, want pass")
 		}
 	})
 
 	t.Run("invalid value fails", func(t *testing.T) {
 		val := -1
-		err := RequiredPtr(&val, func(v int) error {
+		v := RequiredPtr(&val, func(v int) *Validation {
 			if v < 0 {
-				return errors.New("must be positive")
+				return validation(fieldErr("field", "must be positive"), "field", "positive")
 			}
-			return nil
+			return validation(nil, "field", "positive")
 		}, "field")
-		if err == nil {
-			t.Error("RequiredPtr(-1) = nil, want error")
+		if !v.Failed() {
+			t.Error("RequiredPtr(-1) = pass, want fail")
+		}
+	})
+
+	t.Run("combines validators", func(t *testing.T) {
+		val := 42
+		v := RequiredPtr(&val, func(_ int) *Validation {
+			return validation(nil, "field", "positive")
+		}, "field")
+		// Should have both "required" and "positive"
+		hasRequired := false
+		hasPositive := false
+		for _, name := range v.validators {
+			if name == "required" {
+				hasRequired = true
+			}
+			if name == "positive" {
+				hasPositive = true
+			}
+		}
+		if !hasRequired || !hasPositive {
+			t.Errorf("expected validators [required, positive], got %v", v.validators)
 		}
 	})
 }

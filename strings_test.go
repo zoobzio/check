@@ -17,9 +17,9 @@ func TestRequired(t *testing.T) {
 		{"\t\n", true},
 	}
 	for _, tt := range tests {
-		err := Required(tt.input, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("Required(%q) = %v, wantErr %v", tt.input, err, tt.wantErr)
+		v := Required(tt.input, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("Required(%q) failed = %v, wantErr %v", tt.input, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -34,9 +34,9 @@ func TestNotBlank(t *testing.T) {
 		{"   ", true},
 	}
 	for _, tt := range tests {
-		err := NotBlank(tt.input, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("NotBlank(%q) = %v, wantErr %v", tt.input, err, tt.wantErr)
+		v := NotBlank(tt.input, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("NotBlank(%q) failed = %v, wantErr %v", tt.input, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -53,9 +53,9 @@ func TestMinLen(t *testing.T) {
 		{"日本", 3, true},   // 2 runes
 	}
 	for _, tt := range tests {
-		err := MinLen(tt.input, tt.min, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("MinLen(%q, %d) = %v, wantErr %v", tt.input, tt.min, err, tt.wantErr)
+		v := MinLen(tt.input, tt.min, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("MinLen(%q, %d) failed = %v, wantErr %v", tt.input, tt.min, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -68,13 +68,13 @@ func TestMaxLen(t *testing.T) {
 	}{
 		{"hi", 3, false},
 		{"hello", 3, true},
-		{"日本", 3, false}, // 2 runes
+		{"日本", 3, false},  // 2 runes
 		{"日本語!", 3, true}, // 4 runes
 	}
 	for _, tt := range tests {
-		err := MaxLen(tt.input, tt.max, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("MaxLen(%q, %d) = %v, wantErr %v", tt.input, tt.max, err, tt.wantErr)
+		v := MaxLen(tt.input, tt.max, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("MaxLen(%q, %d) failed = %v, wantErr %v", tt.input, tt.max, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -90,9 +90,9 @@ func TestLen(t *testing.T) {
 		{"abcd", 3, true},
 	}
 	for _, tt := range tests {
-		err := Len(tt.input, tt.exact, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("Len(%q, %d) = %v, wantErr %v", tt.input, tt.exact, err, tt.wantErr)
+		v := Len(tt.input, tt.exact, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("Len(%q, %d) failed = %v, wantErr %v", tt.input, tt.exact, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -111,9 +111,9 @@ func TestLenBetween(t *testing.T) {
 		{"abcde", 2, 4, true},
 	}
 	for _, tt := range tests {
-		err := LenBetween(tt.input, tt.min, tt.max, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("LenBetween(%q, %d, %d) = %v, wantErr %v", tt.input, tt.min, tt.max, err, tt.wantErr)
+		v := LenBetween(tt.input, tt.min, tt.max, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("LenBetween(%q, %d, %d) failed = %v, wantErr %v", tt.input, tt.min, tt.max, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -129,9 +129,9 @@ func TestMatch(t *testing.T) {
 		{"12a", true},
 	}
 	for _, tt := range tests {
-		err := Match(tt.input, pattern, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("Match(%q) = %v, wantErr %v", tt.input, err, tt.wantErr)
+		v := Match(tt.input, pattern, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("Match(%q) failed = %v, wantErr %v", tt.input, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -146,9 +146,9 @@ func TestNotMatch(t *testing.T) {
 		{"my secret", true},
 	}
 	for _, tt := range tests {
-		err := NotMatch(tt.input, pattern, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("NotMatch(%q) = %v, wantErr %v", tt.input, err, tt.wantErr)
+		v := NotMatch(tt.input, pattern, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("NotMatch(%q) failed = %v, wantErr %v", tt.input, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -163,9 +163,9 @@ func TestPrefix(t *testing.T) {
 		{"hello", "lo", true},
 	}
 	for _, tt := range tests {
-		err := Prefix(tt.input, tt.prefix, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("Prefix(%q, %q) = %v, wantErr %v", tt.input, tt.prefix, err, tt.wantErr)
+		v := Prefix(tt.input, tt.prefix, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("Prefix(%q, %q) failed = %v, wantErr %v", tt.input, tt.prefix, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -180,9 +180,9 @@ func TestSuffix(t *testing.T) {
 		{"hello", "he", true},
 	}
 	for _, tt := range tests {
-		err := Suffix(tt.input, tt.suffix, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("Suffix(%q, %q) = %v, wantErr %v", tt.input, tt.suffix, err, tt.wantErr)
+		v := Suffix(tt.input, tt.suffix, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("Suffix(%q, %q) failed = %v, wantErr %v", tt.input, tt.suffix, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -197,9 +197,9 @@ func TestContains(t *testing.T) {
 		{"hello world", "xyz", true},
 	}
 	for _, tt := range tests {
-		err := Contains(tt.input, tt.substr, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("Contains(%q, %q) = %v, wantErr %v", tt.input, tt.substr, err, tt.wantErr)
+		v := Contains(tt.input, tt.substr, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("Contains(%q, %q) failed = %v, wantErr %v", tt.input, tt.substr, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -214,9 +214,9 @@ func TestNotContains(t *testing.T) {
 		{"hello world", "wor", true},
 	}
 	for _, tt := range tests {
-		err := NotContains(tt.input, tt.substr, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("NotContains(%q, %q) = %v, wantErr %v", tt.input, tt.substr, err, tt.wantErr)
+		v := NotContains(tt.input, tt.substr, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("NotContains(%q, %q) failed = %v, wantErr %v", tt.input, tt.substr, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -232,9 +232,9 @@ func TestOneOf(t *testing.T) {
 		{"yellow", true},
 	}
 	for _, tt := range tests {
-		err := OneOf(tt.input, allowed, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("OneOf(%q) = %v, wantErr %v", tt.input, err, tt.wantErr)
+		v := OneOf(tt.input, allowed, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("OneOf(%q) failed = %v, wantErr %v", tt.input, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -249,9 +249,9 @@ func TestNotOneOf(t *testing.T) {
 		{"admin", true},
 	}
 	for _, tt := range tests {
-		err := NotOneOf(tt.input, disallowed, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("NotOneOf(%q) = %v, wantErr %v", tt.input, err, tt.wantErr)
+		v := NotOneOf(tt.input, disallowed, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("NotOneOf(%q) failed = %v, wantErr %v", tt.input, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -267,9 +267,9 @@ func TestAlpha(t *testing.T) {
 		{"hello!", true},
 	}
 	for _, tt := range tests {
-		err := Alpha(tt.input, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("Alpha(%q) = %v, wantErr %v", tt.input, err, tt.wantErr)
+		v := Alpha(tt.input, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("Alpha(%q) failed = %v, wantErr %v", tt.input, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -284,9 +284,9 @@ func TestAlphaNumeric(t *testing.T) {
 		{"hello!", true},
 	}
 	for _, tt := range tests {
-		err := AlphaNumeric(tt.input, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("AlphaNumeric(%q) = %v, wantErr %v", tt.input, err, tt.wantErr)
+		v := AlphaNumeric(tt.input, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("AlphaNumeric(%q) failed = %v, wantErr %v", tt.input, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -301,9 +301,9 @@ func TestNumeric(t *testing.T) {
 		{"12.3", true},
 	}
 	for _, tt := range tests {
-		err := Numeric(tt.input, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("Numeric(%q) = %v, wantErr %v", tt.input, err, tt.wantErr)
+		v := Numeric(tt.input, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("Numeric(%q) failed = %v, wantErr %v", tt.input, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -319,9 +319,9 @@ func TestASCII(t *testing.T) {
 		{"日本語", true},
 	}
 	for _, tt := range tests {
-		err := ASCII(tt.input, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("ASCII(%q) = %v, wantErr %v", tt.input, err, tt.wantErr)
+		v := ASCII(tt.input, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("ASCII(%q) failed = %v, wantErr %v", tt.input, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -336,9 +336,9 @@ func TestPrintableASCII(t *testing.T) {
 		{"hello\n", true},   // newline is not printable
 	}
 	for _, tt := range tests {
-		err := PrintableASCII(tt.input, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("PrintableASCII(%q) = %v, wantErr %v", tt.input, err, tt.wantErr)
+		v := PrintableASCII(tt.input, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("PrintableASCII(%q) failed = %v, wantErr %v", tt.input, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -353,9 +353,9 @@ func TestLowerCase(t *testing.T) {
 		{"HELLO", true},
 	}
 	for _, tt := range tests {
-		err := LowerCase(tt.input, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("LowerCase(%q) = %v, wantErr %v", tt.input, err, tt.wantErr)
+		v := LowerCase(tt.input, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("LowerCase(%q) failed = %v, wantErr %v", tt.input, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -370,9 +370,9 @@ func TestUpperCase(t *testing.T) {
 		{"hello", true},
 	}
 	for _, tt := range tests {
-		err := UpperCase(tt.input, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("UpperCase(%q) = %v, wantErr %v", tt.input, err, tt.wantErr)
+		v := UpperCase(tt.input, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("UpperCase(%q) failed = %v, wantErr %v", tt.input, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -387,9 +387,9 @@ func TestNoWhitespace(t *testing.T) {
 		{"hello\t", true},
 	}
 	for _, tt := range tests {
-		err := NoWhitespace(tt.input, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("NoWhitespace(%q) = %v, wantErr %v", tt.input, err, tt.wantErr)
+		v := NoWhitespace(tt.input, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("NoWhitespace(%q) failed = %v, wantErr %v", tt.input, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -405,9 +405,9 @@ func TestTrimmed(t *testing.T) {
 		{" hello ", true},
 	}
 	for _, tt := range tests {
-		err := Trimmed(tt.input, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("Trimmed(%q) = %v, wantErr %v", tt.input, err, tt.wantErr)
+		v := Trimmed(tt.input, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("Trimmed(%q) failed = %v, wantErr %v", tt.input, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -422,9 +422,9 @@ func TestSingleLine(t *testing.T) {
 		{"hello\rworld", true},
 	}
 	for _, tt := range tests {
-		err := SingleLine(tt.input, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("SingleLine(%q) = %v, wantErr %v", tt.input, err, tt.wantErr)
+		v := SingleLine(tt.input, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("SingleLine(%q) failed = %v, wantErr %v", tt.input, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -443,9 +443,9 @@ func TestIdentifier(t *testing.T) {
 		{"", true},
 	}
 	for _, tt := range tests {
-		err := Identifier(tt.input, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("Identifier(%q) = %v, wantErr %v", tt.input, err, tt.wantErr)
+		v := Identifier(tt.input, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("Identifier(%q) failed = %v, wantErr %v", tt.input, v.Failed(), tt.wantErr)
 		}
 	}
 }
@@ -458,16 +458,16 @@ func TestSlug(t *testing.T) {
 		{"hello-world", false},
 		{"hello", false},
 		{"hello123", false},
-		{"Hello", true},      // uppercase
-		{"-hello", true},     // starts with hyphen
-		{"hello-", true},     // ends with hyphen
+		{"Hello", true},       // uppercase
+		{"-hello", true},      // starts with hyphen
+		{"hello-", true},      // ends with hyphen
 		{"hello--world", true}, // consecutive hyphens
 		{"", true},
 	}
 	for _, tt := range tests {
-		err := Slug(tt.input, "field")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("Slug(%q) = %v, wantErr %v", tt.input, err, tt.wantErr)
+		v := Slug(tt.input, "field")
+		if v.Failed() != tt.wantErr {
+			t.Errorf("Slug(%q) failed = %v, wantErr %v", tt.input, v.Failed(), tt.wantErr)
 		}
 	}
 }

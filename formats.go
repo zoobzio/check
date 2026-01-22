@@ -29,305 +29,354 @@ var (
 )
 
 // Email validates that a string is a valid email address.
-func Email(v, field string) error {
+func Email(v, field string) *Validation {
+	var err error
 	if !emailRegex.MatchString(v) {
-		return fieldErr(field, "must be a valid email address")
+		err = fieldErr(field, "must be a valid email address")
 	}
-	return nil
+	return validation(err, field, "email")
 }
 
 // URL validates that a string is a valid URL.
-func URL(v, field string) error {
-	u, err := url.Parse(v)
-	if err != nil || u.Scheme == "" || u.Host == "" {
-		return fieldErr(field, "must be a valid URL")
+func URL(v, field string) *Validation {
+	var err error
+	u, parseErr := url.Parse(v)
+	if parseErr != nil || u.Scheme == "" || u.Host == "" {
+		err = fieldErr(field, "must be a valid URL")
 	}
-	return nil
+	return validation(err, field, "url")
 }
 
 // URLWithScheme validates that a string is a valid URL with one of the given schemes.
-func URLWithScheme(v string, schemes []string, field string) error {
-	u, err := url.Parse(v)
-	if err != nil || u.Scheme == "" || u.Host == "" {
-		return fieldErr(field, "must be a valid URL")
-	}
-	for _, s := range schemes {
-		if strings.EqualFold(u.Scheme, s) {
-			return nil
+func URLWithScheme(v string, schemes []string, field string) *Validation {
+	var err error
+	u, parseErr := url.Parse(v)
+	if parseErr != nil || u.Scheme == "" || u.Host == "" {
+		err = fieldErr(field, "must be a valid URL")
+	} else {
+		found := false
+		for _, s := range schemes {
+			if strings.EqualFold(u.Scheme, s) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			err = fieldErrf(field, "must have scheme: %s", strings.Join(schemes, ", "))
 		}
 	}
-	return fieldErrf(field, "must have scheme: %s", strings.Join(schemes, ", "))
+	return validation(err, field, "url")
 }
 
 // HTTPOrHTTPS validates that a string is a valid HTTP or HTTPS URL.
-func HTTPOrHTTPS(v, field string) error {
+func HTTPOrHTTPS(v, field string) *Validation {
 	return URLWithScheme(v, []string{"http", "https"}, field)
 }
 
 // UUID validates that a string is a valid UUID (versions 1-5).
-func UUID(v, field string) error {
+func UUID(v, field string) *Validation {
+	var err error
 	if !uuidRegex.MatchString(v) {
-		return fieldErr(field, "must be a valid UUID")
+		err = fieldErr(field, "must be a valid UUID")
 	}
-	return nil
+	return validation(err, field, "uuid")
 }
 
 // UUID4 validates that a string is a valid UUID version 4.
-func UUID4(v, field string) error {
+func UUID4(v, field string) *Validation {
+	var err error
 	if !uuid4Regex.MatchString(v) {
-		return fieldErr(field, "must be a valid UUID v4")
+		err = fieldErr(field, "must be a valid UUID v4")
 	}
-	return nil
+	return validation(err, field, "uuid4")
 }
 
 // IP validates that a string is a valid IP address (v4 or v6).
-func IP(v, field string) error {
+func IP(v, field string) *Validation {
+	var err error
 	if net.ParseIP(v) == nil {
-		return fieldErr(field, "must be a valid IP address")
+		err = fieldErr(field, "must be a valid IP address")
 	}
-	return nil
+	return validation(err, field, "ip")
 }
 
 // IPv4 validates that a string is a valid IPv4 address.
-func IPv4(v, field string) error {
+func IPv4(v, field string) *Validation {
+	var err error
 	ip := net.ParseIP(v)
 	if ip == nil || ip.To4() == nil {
-		return fieldErr(field, "must be a valid IPv4 address")
+		err = fieldErr(field, "must be a valid IPv4 address")
 	}
-	return nil
+	return validation(err, field, "ipv4")
 }
 
 // IPv6 validates that a string is a valid IPv6 address.
-func IPv6(v, field string) error {
+func IPv6(v, field string) *Validation {
+	var err error
 	ip := net.ParseIP(v)
 	if ip == nil || ip.To4() != nil {
-		return fieldErr(field, "must be a valid IPv6 address")
+		err = fieldErr(field, "must be a valid IPv6 address")
 	}
-	return nil
+	return validation(err, field, "ipv6")
 }
 
 // CIDR validates that a string is a valid CIDR notation.
-func CIDR(v, field string) error {
-	_, _, err := net.ParseCIDR(v)
-	if err != nil {
-		return fieldErr(field, "must be a valid CIDR notation")
+func CIDR(v, field string) *Validation {
+	var err error
+	_, _, parseErr := net.ParseCIDR(v)
+	if parseErr != nil {
+		err = fieldErr(field, "must be a valid CIDR notation")
 	}
-	return nil
+	return validation(err, field, "cidr")
 }
 
 // MAC validates that a string is a valid MAC address.
-func MAC(v, field string) error {
+func MAC(v, field string) *Validation {
+	var err error
 	if !macRegex.MatchString(v) && !macDashRegex.MatchString(v) {
-		return fieldErr(field, "must be a valid MAC address")
+		err = fieldErr(field, "must be a valid MAC address")
 	}
-	return nil
+	return validation(err, field, "mac")
 }
 
 // Hostname validates that a string is a valid hostname.
-func Hostname(v, field string) error {
-	if len(v) > 253 {
-		return fieldErr(field, "must be a valid hostname")
+func Hostname(v, field string) *Validation {
+	var err error
+	if len(v) > 253 || !hostnameRegex.MatchString(v) {
+		err = fieldErr(field, "must be a valid hostname")
 	}
-	if !hostnameRegex.MatchString(v) {
-		return fieldErr(field, "must be a valid hostname")
-	}
-	return nil
+	return validation(err, field, "hostname")
 }
 
 // Port validates that a string is a valid port number (1-65535).
-func Port(v, field string) error {
-	p, err := strconv.Atoi(v)
-	if err != nil || p < 1 || p > 65535 {
-		return fieldErr(field, "must be a valid port number (1-65535)")
+func Port(v, field string) *Validation {
+	var err error
+	p, parseErr := strconv.Atoi(v)
+	if parseErr != nil || p < 1 || p > 65535 {
+		err = fieldErr(field, "must be a valid port number (1-65535)")
 	}
-	return nil
+	return validation(err, field, "port")
 }
 
 // HostPort validates that a string is a valid host:port combination.
-func HostPort(v, field string) error {
-	host, port, err := net.SplitHostPort(v)
-	if err != nil {
-		return fieldErr(field, "must be a valid host:port")
+func HostPort(v, field string) *Validation {
+	var err error
+	host, port, splitErr := net.SplitHostPort(v)
+	switch {
+	case splitErr != nil:
+		err = fieldErr(field, "must be a valid host:port")
+	case host == "":
+		err = fieldErr(field, "host must not be empty")
+	default:
+		p, parseErr := strconv.Atoi(port)
+		if parseErr != nil || p < 1 || p > 65535 {
+			err = fieldErr(field, "port must be a valid number (1-65535)")
+		}
 	}
-	if host == "" {
-		return fieldErr(field, "host must not be empty")
-	}
-	p, err := strconv.Atoi(port)
-	if err != nil || p < 1 || p > 65535 {
-		return fieldErr(field, "port must be a valid number (1-65535)")
-	}
-	return nil
+	return validation(err, field, "hostport")
 }
 
 // HexColor validates that a string is a valid hex color (#RGB, #RRGGBB, or #RRGGBBAA).
-func HexColor(v, field string) error {
+func HexColor(v, field string) *Validation {
+	var err error
 	if !hexColorRegex.MatchString(v) {
-		return fieldErr(field, "must be a valid hex color")
+		err = fieldErr(field, "must be a valid hex color")
 	}
-	return nil
+	return validation(err, field, "hexcolor")
 }
 
 // HexColorFull validates that a string is a valid 6-digit hex color (#RRGGBB).
-func HexColorFull(v, field string) error {
+func HexColorFull(v, field string) *Validation {
+	var err error
 	if !hexColorFullRegex.MatchString(v) {
-		return fieldErr(field, "must be a valid hex color (#RRGGBB)")
+		err = fieldErr(field, "must be a valid hex color (#RRGGBB)")
 	}
-	return nil
+	return validation(err, field, "hexcolor")
 }
 
 // Base64 validates that a string is valid base64.
-func Base64(v, field string) error {
-	_, err := base64.StdEncoding.DecodeString(v)
-	if err != nil {
-		return fieldErr(field, "must be valid base64")
+func Base64(v, field string) *Validation {
+	var err error
+	_, decodeErr := base64.StdEncoding.DecodeString(v)
+	if decodeErr != nil {
+		err = fieldErr(field, "must be valid base64")
 	}
-	return nil
+	return validation(err, field, "base64")
 }
 
 // Base64URL validates that a string is valid URL-safe base64.
-func Base64URL(v, field string) error {
-	_, err := base64.URLEncoding.DecodeString(v)
-	if err != nil {
-		return fieldErr(field, "must be valid URL-safe base64")
+func Base64URL(v, field string) *Validation {
+	var err error
+	_, decodeErr := base64.URLEncoding.DecodeString(v)
+	if decodeErr != nil {
+		err = fieldErr(field, "must be valid URL-safe base64")
 	}
-	return nil
+	return validation(err, field, "base64url")
 }
 
 // JSON validates that a string is valid JSON.
-func JSON(v, field string) error {
+func JSON(v, field string) *Validation {
+	var err error
 	if !json.Valid([]byte(v)) {
-		return fieldErr(field, "must be valid JSON")
+		err = fieldErr(field, "must be valid JSON")
 	}
-	return nil
+	return validation(err, field, "json")
 }
 
 // Semver validates that a string is a valid semantic version.
-func Semver(v, field string) error {
+func Semver(v, field string) *Validation {
+	var err error
 	if !semverRegex.MatchString(v) {
-		return fieldErr(field, "must be a valid semantic version")
+		err = fieldErr(field, "must be a valid semantic version")
 	}
-	return nil
+	return validation(err, field, "semver")
 }
 
 // E164 validates that a string is a valid E.164 phone number.
-func E164(v, field string) error {
+func E164(v, field string) *Validation {
+	var err error
 	if !e164Regex.MatchString(v) {
-		return fieldErr(field, "must be a valid E.164 phone number")
+		err = fieldErr(field, "must be a valid E.164 phone number")
 	}
-	return nil
+	return validation(err, field, "e164")
 }
 
 // CreditCard validates that a string is a valid credit card number using the Luhn algorithm.
-func CreditCard(v, field string) error {
+func CreditCard(v, field string) *Validation {
+	var err error
 	// Remove spaces and dashes
 	clean := strings.ReplaceAll(strings.ReplaceAll(v, " ", ""), "-", "")
 	if len(clean) < 13 || len(clean) > 19 {
-		return fieldErr(field, "must be a valid credit card number")
-	}
-	// Check all digits
-	for _, r := range clean {
-		if r < '0' || r > '9' {
-			return fieldErr(field, "must be a valid credit card number")
-		}
-	}
-	// Luhn algorithm
-	sum := 0
-	nDigits := len(clean)
-	parity := nDigits % 2
-	for i := 0; i < nDigits; i++ {
-		digit := int(clean[i] - '0')
-		if i%2 == parity {
-			digit *= 2
-			if digit > 9 {
-				digit -= 9
+		err = fieldErr(field, "must be a valid credit card number")
+	} else {
+		valid := true
+		// Check all digits
+		for _, r := range clean {
+			if r < '0' || r > '9' {
+				valid = false
+				break
 			}
 		}
-		sum += digit
+		if valid {
+			// Luhn algorithm
+			sum := 0
+			nDigits := len(clean)
+			parity := nDigits % 2
+			for i := 0; i < nDigits; i++ {
+				digit := int(clean[i] - '0')
+				if i%2 == parity {
+					digit *= 2
+					if digit > 9 {
+						digit -= 9
+					}
+				}
+				sum += digit
+			}
+			if sum%10 != 0 {
+				valid = false
+			}
+		}
+		if !valid {
+			err = fieldErr(field, "must be a valid credit card number")
+		}
 	}
-	if sum%10 != 0 {
-		return fieldErr(field, "must be a valid credit card number")
-	}
-	return nil
+	return validation(err, field, "creditcard")
 }
 
 // Latitude validates that a string is a valid latitude (-90 to 90).
-func Latitude(v, field string) error {
-	lat, err := strconv.ParseFloat(v, 64)
-	if err != nil || lat < -90 || lat > 90 {
-		return fieldErr(field, "must be a valid latitude (-90 to 90)")
+func Latitude(v, field string) *Validation {
+	var err error
+	lat, parseErr := strconv.ParseFloat(v, 64)
+	if parseErr != nil || lat < -90 || lat > 90 {
+		err = fieldErr(field, "must be a valid latitude (-90 to 90)")
 	}
-	return nil
+	return validation(err, field, "latitude")
 }
 
 // Longitude validates that a string is a valid longitude (-180 to 180).
-func Longitude(v, field string) error {
-	lon, err := strconv.ParseFloat(v, 64)
-	if err != nil || lon < -180 || lon > 180 {
-		return fieldErr(field, "must be a valid longitude (-180 to 180)")
+func Longitude(v, field string) *Validation {
+	var err error
+	lon, parseErr := strconv.ParseFloat(v, 64)
+	if parseErr != nil || lon < -180 || lon > 180 {
+		err = fieldErr(field, "must be a valid longitude (-180 to 180)")
 	}
-	return nil
+	return validation(err, field, "longitude")
 }
 
 // CountryCode2 validates that a string is a valid ISO 3166-1 alpha-2 country code.
-func CountryCode2(v, field string) error {
+func CountryCode2(v, field string) *Validation {
+	var err error
 	if len(v) != 2 {
-		return fieldErr(field, "must be a valid ISO 3166-1 alpha-2 country code")
-	}
-	for _, r := range v {
-		if r < 'A' || r > 'Z' {
-			return fieldErr(field, "must be a valid ISO 3166-1 alpha-2 country code")
+		err = fieldErr(field, "must be a valid ISO 3166-1 alpha-2 country code")
+	} else {
+		for _, r := range v {
+			if r < 'A' || r > 'Z' {
+				err = fieldErr(field, "must be a valid ISO 3166-1 alpha-2 country code")
+				break
+			}
 		}
 	}
-	return nil
+	return validation(err, field, "iso3166_1_alpha2")
 }
 
 // CountryCode3 validates that a string is a valid ISO 3166-1 alpha-3 country code.
-func CountryCode3(v, field string) error {
+func CountryCode3(v, field string) *Validation {
+	var err error
 	if len(v) != 3 {
-		return fieldErr(field, "must be a valid ISO 3166-1 alpha-3 country code")
-	}
-	for _, r := range v {
-		if r < 'A' || r > 'Z' {
-			return fieldErr(field, "must be a valid ISO 3166-1 alpha-3 country code")
+		err = fieldErr(field, "must be a valid ISO 3166-1 alpha-3 country code")
+	} else {
+		for _, r := range v {
+			if r < 'A' || r > 'Z' {
+				err = fieldErr(field, "must be a valid ISO 3166-1 alpha-3 country code")
+				break
+			}
 		}
 	}
-	return nil
+	return validation(err, field, "iso3166_1_alpha3")
 }
 
 // LanguageCode validates that a string is a valid ISO 639-1 language code.
-func LanguageCode(v, field string) error {
+func LanguageCode(v, field string) *Validation {
+	var err error
 	if len(v) != 2 {
-		return fieldErr(field, "must be a valid ISO 639-1 language code")
-	}
-	for _, r := range v {
-		if r < 'a' || r > 'z' {
-			return fieldErr(field, "must be a valid ISO 639-1 language code")
+		err = fieldErr(field, "must be a valid ISO 639-1 language code")
+	} else {
+		for _, r := range v {
+			if r < 'a' || r > 'z' {
+				err = fieldErr(field, "must be a valid ISO 639-1 language code")
+				break
+			}
 		}
 	}
-	return nil
+	return validation(err, field, "iso639_1")
 }
 
 // CurrencyCode validates that a string is a valid ISO 4217 currency code.
-func CurrencyCode(v, field string) error {
+func CurrencyCode(v, field string) *Validation {
+	var err error
 	if len(v) != 3 {
-		return fieldErr(field, "must be a valid ISO 4217 currency code")
-	}
-	for _, r := range v {
-		if r < 'A' || r > 'Z' {
-			return fieldErr(field, "must be a valid ISO 4217 currency code")
+		err = fieldErr(field, "must be a valid ISO 4217 currency code")
+	} else {
+		for _, r := range v {
+			if r < 'A' || r > 'Z' {
+				err = fieldErr(field, "must be a valid ISO 4217 currency code")
+				break
+			}
 		}
 	}
-	return nil
+	return validation(err, field, "iso4217")
 }
 
 // Hex validates that a string contains only hexadecimal characters.
-func Hex(v, field string) error {
+func Hex(v, field string) *Validation {
+	var err error
 	for _, r := range v {
 		if !isHexDigit(r) {
-			return fieldErr(field, "must be a valid hexadecimal string")
+			err = fieldErr(field, "must be a valid hexadecimal string")
+			break
 		}
 	}
-	return nil
+	return validation(err, field, "hex")
 }
 
 func isHexDigit(r rune) bool {
@@ -335,33 +384,33 @@ func isHexDigit(r rune) bool {
 }
 
 // DataURI validates that a string is a valid data URI.
-func DataURI(v, field string) error {
+func DataURI(v, field string) *Validation {
+	var err error
 	if !strings.HasPrefix(v, "data:") {
-		return fieldErr(field, "must be a valid data URI")
+		err = fieldErr(field, "must be a valid data URI")
+	} else {
+		commaIdx := strings.Index(v, ",")
+		if commaIdx == -1 {
+			err = fieldErr(field, "must be a valid data URI")
+		}
 	}
-	commaIdx := strings.Index(v, ",")
-	if commaIdx == -1 {
-		return fieldErr(field, "must be a valid data URI")
-	}
-	return nil
+	return validation(err, field, "datauri")
 }
 
 // FilePath validates that a string looks like a file path (contains path separators).
-func FilePath(v, field string) error {
-	if v == "" {
-		return fieldErr(field, "must be a valid file path")
+func FilePath(v, field string) *Validation {
+	var err error
+	if v == "" || strings.ContainsRune(v, 0) {
+		err = fieldErr(field, "must be a valid file path")
 	}
-	// Just basic validation - not empty and doesn't contain null bytes
-	if strings.ContainsRune(v, 0) {
-		return fieldErr(field, "must be a valid file path")
-	}
-	return nil
+	return validation(err, field, "filepath")
 }
 
 // UnixPath validates that a string is a valid Unix-style path.
-func UnixPath(v, field string) error {
+func UnixPath(v, field string) *Validation {
+	var err error
 	if v == "" || strings.ContainsRune(v, 0) {
-		return fieldErr(field, "must be a valid Unix path")
+		err = fieldErr(field, "must be a valid Unix path")
 	}
-	return nil
+	return validation(err, field, "unixpath")
 }
