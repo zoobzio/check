@@ -16,10 +16,10 @@ func TestBefore(t *testing.T) {
 		ref     time.Time
 		wantErr bool
 	}{
-		{"past before now", past, now, false},
-		{"now before future", now, future, false},
-		{"future before now", future, now, true},
-		{"same time", now, now, true},
+		{name: "past before now", value: past, ref: now, wantErr: false},
+		{name: "now before future", value: now, ref: future, wantErr: false},
+		{name: "future before now", value: future, ref: now, wantErr: true},
+		{name: "same time", value: now, ref: now, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -42,10 +42,10 @@ func TestAfter(t *testing.T) {
 		ref     time.Time
 		wantErr bool
 	}{
-		{"future after now", future, now, false},
-		{"now after past", now, past, false},
-		{"past after now", past, now, true},
-		{"same time", now, now, true},
+		{name: "future after now", value: future, ref: now, wantErr: false},
+		{name: "now after past", value: now, ref: past, wantErr: false},
+		{name: "past after now", value: past, ref: now, wantErr: true},
+		{name: "same time", value: now, ref: now, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -68,9 +68,9 @@ func TestBeforeOrEqual(t *testing.T) {
 		ref     time.Time
 		wantErr bool
 	}{
-		{"past before now", past, now, false},
-		{"same time", now, now, false},
-		{"future before now", future, now, true},
+		{name: "past before now", value: past, ref: now, wantErr: false},
+		{name: "same time", value: now, ref: now, wantErr: false},
+		{name: "future before now", value: future, ref: now, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -94,11 +94,11 @@ func TestBetweenTime(t *testing.T) {
 		value   time.Time
 		wantErr bool
 	}{
-		{"in range", now, false},
-		{"at start", start, false},
-		{"at end", end, false},
-		{"before range", before, true},
-		{"after range", after, true},
+		{name: "in range", value: now, wantErr: false},
+		{name: "at start", value: start, wantErr: false},
+		{name: "at end", value: end, wantErr: false},
+		{name: "before range", value: before, wantErr: true},
+		{name: "after range", value: after, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -116,14 +116,14 @@ func TestWithinDuration(t *testing.T) {
 	far := now.Add(2 * time.Hour)
 
 	tests := []struct {
-		name    string
 		value   time.Time
+		name    string
 		dur     time.Duration
 		wantErr bool
 	}{
-		{"within duration", nearby, time.Hour, false},
-		{"at boundary", now.Add(time.Hour), time.Hour, false},
-		{"beyond duration", far, time.Hour, true},
+		{name: "within duration", value: nearby, dur: time.Hour, wantErr: false},
+		{name: "at boundary", value: now.Add(time.Hour), dur: time.Hour, wantErr: false},
+		{name: "beyond duration", value: far, dur: time.Hour, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -141,13 +141,13 @@ func TestSameDay(t *testing.T) {
 	nextDay := now.AddDate(0, 0, 1)
 
 	tests := []struct {
-		name    string
 		value   time.Time
 		ref     time.Time
+		name    string
 		wantErr bool
 	}{
-		{"same day", now, sameDay, false},
-		{"different day", now, nextDay, true},
+		{name: "same day", value: now, ref: sameDay, wantErr: false},
+		{name: "different day", value: now, ref: nextDay, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -164,13 +164,13 @@ func TestWeekday(t *testing.T) {
 	monday := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC) // Jan 1, 2024 is Monday
 
 	tests := []struct {
-		name    string
 		value   time.Time
+		name    string
 		day     time.Weekday
 		wantErr bool
 	}{
-		{"correct weekday", monday, time.Monday, false},
-		{"wrong weekday", monday, time.Tuesday, true},
+		{name: "correct weekday", value: monday, day: time.Monday, wantErr: false},
+		{name: "wrong weekday", value: monday, day: time.Tuesday, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -187,12 +187,12 @@ func TestNotWeekend(t *testing.T) {
 	saturday := time.Date(2024, 1, 6, 12, 0, 0, 0, time.UTC) // Saturday
 
 	tests := []struct {
-		name    string
 		value   time.Time
+		name    string
 		wantErr bool
 	}{
-		{"weekday", monday, false},
-		{"weekend", saturday, true},
+		{name: "weekday", value: monday, wantErr: false},
+		{name: "weekend", value: saturday, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -206,12 +206,12 @@ func TestNotWeekend(t *testing.T) {
 
 func TestNotZeroTime(t *testing.T) {
 	tests := []struct {
-		name    string
 		value   time.Time
+		name    string
 		wantErr bool
 	}{
-		{"not zero", time.Now(), false},
-		{"zero", time.Time{}, true},
+		{name: "not zero", value: time.Now(), wantErr: false},
+		{name: "zero", value: time.Time{}, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
