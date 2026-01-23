@@ -6,34 +6,38 @@
 [![CodeQL](https://github.com/zoobzio/check/workflows/CodeQL/badge.svg)](https://github.com/zoobzio/check/security/code-scanning)
 [![Go Reference](https://pkg.go.dev/badge/github.com/zoobzio/check.svg)](https://pkg.go.dev/github.com/zoobzio/check)
 [![License](https://img.shields.io/github/license/zoobzio/check)](LICENSE)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/zoobzio/check)](go.mod)
+[![Go Version](https://img.shields.io/github/go-mod-go-version/zoobzio/check)](go.mod)
 [![Release](https://img.shields.io/github/v/release/zoobzio/check)](https://github.com/zoobzio/check/releases)
 
-Zero-reflection validation primitives for Go.
+Fluent validation for Go with struct tag verification.
 
-Explicit validation functions, no struct tags, fully composable.
-
-## Just Functions
+## Usage
 
 ```go
 type User struct {
-    Email    string
-    Age      int
-    Username string
+    Email    string  `json:"email" validate:"required,email"`
+    Password string  `json:"password" validate:"required,min=8"`
+    Name     *string `json:"name" validate:"omitempty,max=100"`
+    Age      int     `json:"age" validate:"min=13,max=120"`
 }
 
-func (u User) Validate() *check.Result {
-    return check.All(
-        check.Required(u.Email, "email"),
-        check.Email(u.Email, "email"),
-        check.Between(u.Age, 13, 120, "age"),
-        check.LenBetween(u.Username, 3, 20, "username"),
-        check.Slug(u.Username, "username"),
-    )
+func (u *User) Validate() error {
+    return check.Check[User](
+        check.Str(u.Email, "email").Required().Email().MaxLen(255).V(),
+        check.Str(u.Password, "password").Required().MinLen(8).V(),
+        check.OptStr(u.Name, "name").MaxLen(100).V(),
+        check.Num(u.Age, "age").Between(13, 120).V(),
+    ).Err()
 }
 ```
 
-No magic, no reflection, and no runtime struct-tag parsing—just functions that return validation results.
+`Check[T]` validates your fields and verifies that every field with a `validate` tag was actually checked. Forget a field? You'll know:
+
+```
+password: tagged but not validated (validate: required,min=8)
+```
+
+No magic, no reflection at validation time—just functions that return validation results.
 
 ```go
 r := user.Validate()
@@ -59,80 +63,64 @@ go get github.com/zoobzio/check
 
 Requires Go 1.24+.
 
-## Quick Start
+## Fluent Builders
+
+Chain validators naturally:
 
 ```go
-package main
+// Strings
+check.Str(email, "email").Required().Email().MaxLen(255).V()
 
-import (
-    "fmt"
-    "github.com/zoobzio/check"
+// Optional strings (nil skips validation)
+check.OptStr(name, "name").MaxLen(100).V()
+
+// Numbers
+check.Num(age, "age").Between(13, 120).V()
+
+// Integers (adds Even, Odd, MultipleOf)
+check.Int(count, "count").Positive().Even().V()
+
+// Slices with auto-generated field names
+check.StrSlice(tags, "tags").NotEmpty().MaxItems(10).Each(func(b *check.StrBuilder) {
+    b.MaxLen(50)  // Validates tags[0], tags[1], etc.
+}).V()
+```
+
+Conditional validation with `.When()`:
+
+```go
+check.Str(password, "password").
+    Required().
+    When(requireStrong, func(b *check.StrBuilder) {
+        b.MinLen(12).Match(complexityRegex)
+    }).V()
+```
+
+## Direct Functions
+
+Use validators directly when you don't need the fluent API:
+
+```go
+check.All(
+    check.Required(email, "email"),
+    check.Email(email, "email"),
+    check.Between(age, 13, 120, "age"),
 )
-
-type Order struct {
-    ID       string
-    Total    float64
-    Quantity int
-    Email    string
-}
-
-func (o Order) Validate() *check.Result {
-    return check.All(
-        check.Required(o.ID, "id"),
-        check.UUID(o.ID, "id"),
-        check.Positive(o.Total, "total"),
-        check.Between(o.Quantity, 1, 100, "quantity"),
-        check.Email(o.Email, "email"),
-    )
-}
-
-func main() {
-    order := Order{
-        ID:       "not-a-uuid",
-        Total:    -50.00,
-        Quantity: 0,
-        Email:    "invalid",
-    }
-
-    r := order.Validate()
-    if r.Err() != nil {
-        // All errors collected
-        fmt.Println(r.Err())
-        // id: must be a valid UUID; total: must be positive; quantity: must be between 1 and 100; email: must be a valid email address
-
-        // Inspect individually
-        for _, fe := range check.GetFieldErrors(r) {
-            fmt.Printf("Field %q: %s\n", fe.Field, fe.Message)
-        }
-
-        // Check specific fields
-        if check.HasField(r, "email") {
-            fmt.Println("Email validation failed")
-        }
-    }
-
-    // Fail-fast alternative
-    r = check.First(
-        check.Required(order.ID, "id"),
-        check.UUID(order.ID, "id"),
-    )
-    // Returns on first error
-}
 ```
 
 ## Capabilities
 
-| Category    | Functions                                                                                   |
-| ----------- | ------------------------------------------------------------------------------------------- |
-| Strings     | `Required`, `MinLen`, `MaxLen`, `Match`, `Prefix`, `Suffix`, `OneOf`, `Alpha`, `Slug`, etc. |
-| Numbers     | `Min`, `Max`, `Between`, `Positive`, `Negative`, `NonZero`, `MultipleOf`, `Percentage`      |
-| Comparison  | `Equal`, `NotEqual`, `GreaterThan`, `LessThan`, `EqualField`, `GreaterThanField`            |
-| Slices      | `NotEmpty`, `MinItems`, `Unique`, `ContainsAll`, `Each`, `AllSatisfy`, `Subset`             |
-| Maps        | `NotEmptyMap`, `HasKey`, `HasKeys`, `OnlyKeys`, `EachKey`, `EachMapValue`, `UniqueValues`   |
-| Pointers    | `NotNil`, `Nil`, `NilOr`, `RequiredPtr`, `DefaultOr`, `Deref`                               |
-| Time        | `Before`, `After`, `InPast`, `InFuture`, `BetweenTime`, `WithinDuration`, `NotWeekend`      |
-| Formats     | `Email`, `URL`, `UUID`, `IP`, `CIDR`, `Semver`, `E164`, `CreditCard`, `JSON`, `Base64`      |
-| Aggregation | `All` (collect all errors), `First` (fail-fast), `Merge` (combine results)                  |
+| Category    | Builders                                           | Functions                                                                                   |
+| ----------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Strings     | `Str`, `OptStr`                                    | `Required`, `MinLen`, `MaxLen`, `Match`, `Prefix`, `Suffix`, `OneOf`, `Alpha`, `Slug`, etc. |
+| Numbers     | `Num`, `OptNum`, `Int`, `OptInt`                   | `Min`, `Max`, `Between`, `Positive`, `Negative`, `NonZero`, `MultipleOf`, `Percentage`      |
+| Slices      | `Slice`, `OptSlice`, `StrSlice`, `OptStrSlice`     | `NotEmpty`, `MinItems`, `Unique`, `ContainsAll`, `Each`, `AllSatisfy`, `Subset`             |
+| Formats     | (via `Str` methods)                                | `Email`, `URL`, `UUID`, `IP`, `CIDR`, `Semver`, `E164`, `CreditCard`, `JSON`, `Base64`      |
+| Comparison  | —                                                  | `Equal`, `NotEqual`, `GreaterThan`, `LessThan`, `EqualField`, `GreaterThanField`            |
+| Maps        | —                                                  | `NotEmptyMap`, `HasKey`, `HasKeys`, `OnlyKeys`, `EachKey`, `EachMapValue`, `UniqueValues`   |
+| Pointers    | —                                                  | `NotNil`, `Nil`, `NilOr`, `RequiredPtr`, `DefaultOr`, `Deref`                               |
+| Time        | —                                                  | `Before`, `After`, `InPast`, `InFuture`, `BetweenTime`, `WithinDuration`, `NotWeekend`      |
+| Aggregation | —                                                  | `All` (collect all errors), `First` (fail-fast), `Merge`, `Check[T]` (with tag verification)|
 
 ## Validation Tracking
 
@@ -165,13 +153,13 @@ This enables tools to verify that declared validation rules match actual runtime
 
 ## Why check?
 
+- **Fluent API** — chain validators, reduce boilerplate
+- **Tag verification** — `Check[T]` catches forgotten fields at runtime
 - **Zero reflection** — validation is function calls, fully visible and debuggable
 - **Type-safe generics** — `Min[T]`, `Between[T]`, `Each[T]` catch type errors at compile time
 - **Composable** — `All()` collects errors, `First()` fails fast, nest them freely
 - **Field-aware errors** — every error knows which field failed and why
 - **Validation tracking** — verify which validators ran on which fields
-- **No struct tags** — validation rules are code, not strings parsed at runtime
-- **Minimal dependencies** — only `golang.org/x/exp` for generic constraints
 
 ## Validation as Code
 
@@ -181,40 +169,37 @@ Your validation rules live in methods alongside your types. They're testable, re
 
 ```go
 // Conditional validation — just Go code
-func (o Order) Validate() *check.Result {
+func (o Order) Validate() error {
     validations := []*check.Validation{
-        check.Required(o.ID, "id"),
-        check.Positive(o.Total, "total"),
+        check.Str(o.ID, "id").Required().UUID().V(),
+        check.Num(o.Total, "total").Positive().V(),
     }
 
     if o.ShipmentType == "express" {
-        validations = append(validations, check.Required(o.ExpressCode, "express_code"))
+        validations = append(validations,
+            check.Str(o.ExpressCode, "express_code").Required().V(),
+        )
     }
 
-    return check.All(validations...)
+    return check.All(validations...).Err()
 }
 
 // Cross-field validation — just compare values
-func (r DateRange) Validate() *check.Result {
+func (r DateRange) Validate() error {
     return check.All(
         check.NotZeroTime(r.Start, "start"),
         check.NotZeroTime(r.End, "end"),
         check.GreaterThanField(r.End, r.Start, "end", "start"),
-    )
+    ).Err()
 }
 
-// Slice element validation — apply checks to each item
-func (c Cart) Validate() *check.Result {
-    return check.Merge(
-        check.All(check.NotEmpty(c.Items, "items")),
-        check.Each(c.Items, func(item Item, i int) *check.Validation {
-            field := fmt.Sprintf("items[%d]", i)
-            if item.Quantity <= 0 {
-                return check.Positive(item.Quantity, field)
-            }
-            return nil
-        }),
-    )
+// Slice element validation — auto-generated field names
+func (c Cart) Validate() error {
+    return check.All(
+        check.StrSlice(c.ItemIDs, "items").NotEmpty().Each(func(b *check.StrBuilder) {
+            b.Required().UUID()
+        }).V(),
+    ).Err()
 }
 ```
 

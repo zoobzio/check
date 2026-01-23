@@ -11,8 +11,8 @@ func TestNotNil(t *testing.T) {
 		value   *int
 		wantErr bool
 	}{
-		{"not nil", &val, false},
-		{"nil", nil, true},
+		{name: "not nil", value: &val, wantErr: false},
+		{name: "nil", value: nil, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -31,8 +31,8 @@ func TestNil(t *testing.T) {
 		value   *int
 		wantErr bool
 	}{
-		{"nil", nil, false},
-		{"not nil", &val, true},
+		{name: "nil", value: nil, wantErr: false},
+		{name: "not nil", value: &val, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
