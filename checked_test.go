@@ -137,6 +137,20 @@ func TestChecked(t *testing.T) {
 			t.Error("expected error when no validations provided but fields are tagged")
 		}
 	})
+
+	t.Run("validation using struct field name passes", func(t *testing.T) {
+		// Use PascalCase struct field name "Email" instead of json tag "email"
+		name := "John"
+		result := Check[CheckedRequest](
+			Str("test@example.com", "Email").Required().Email().V(),      // struct field name
+			Str("password123", "Password").Required().MinLen(8).V(),      // struct field name
+			OptStr(&name, "Name").MaxLen(100).V(),                        // struct field name
+		)
+
+		if result.Err() != nil {
+			t.Errorf("expected pass when using struct field names, got: %v", result.Err())
+		}
+	})
 }
 
 

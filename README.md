@@ -33,7 +33,7 @@ func (u *User) Validate() error {
 
 `Check[T]` validates your fields and verifies that every field with a `validate` tag was actually checked. Forget a field? You'll know:
 
-```
+```text
 password: tagged but not validated (validate: required,min=8)
 ```
 

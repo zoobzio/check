@@ -41,8 +41,10 @@ func Check[T any](validations ...*Validation) *Result {
 		// Determine the field name to check (prefer json tag, fall back to field name)
 		fieldName := getFieldName(field)
 
-		// Check if this field was validated
-		if _, validated := applied[fieldName]; !validated {
+		// Check if this field was validated using either the json tag name or struct field name
+		_, validatedByFieldName := applied[fieldName]
+		_, validatedByStructName := applied[field.Name]
+		if !validatedByFieldName && !validatedByStructName {
 			missingErrs = append(missingErrs, &UncheckedFieldError{
 				Field:       fieldName,
 				StructField: field.Name,

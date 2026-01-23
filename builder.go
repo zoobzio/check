@@ -1008,15 +1008,11 @@ func (b *SliceBuilder[T]) ItemsBetween(minItems, maxItems int) *SliceBuilder[T] 
 	return b
 }
 
-// Each applies a validation function to each element.
-// The function receives the element and its index.
-// Field names are auto-generated as "field[i]".
-func (b *SliceBuilder[T]) Each(fn func(v T, field string)) *SliceBuilder[T] {
-	for i, item := range b.value {
-		elemField := fmt.Sprintf("%s[%d]", b.field, i)
-		fn(item, elemField)
-	}
-	return b
+// Each applies a validation function to each element, collecting results.
+// The function receives the element and auto-generated field name "field[i]".
+// Returns *Validation for each element; non-nil results are collected.
+func (b *SliceBuilder[T]) Each(fn func(v T, field string) *Validation) *SliceBuilder[T] {
+	return b.EachV(fn)
 }
 
 // EachV applies a validation to each element, collecting results.
