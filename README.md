@@ -6,7 +6,7 @@
 [![CodeQL](https://github.com/zoobzio/check/workflows/CodeQL/badge.svg)](https://github.com/zoobzio/check/security/code-scanning)
 [![Go Reference](https://pkg.go.dev/badge/github.com/zoobzio/check.svg)](https://pkg.go.dev/github.com/zoobzio/check)
 [![License](https://img.shields.io/github/license/zoobzio/check)](LICENSE)
-[![Go Version](https://img.shields.io/github/go-mod-go-version/zoobzio/check)](go.mod)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/zoobzio/check)](go.mod)
 [![Release](https://img.shields.io/github/v/release/zoobzio/check)](https://github.com/zoobzio/check/releases)
 
 Fluent validation for Go with struct tag verification.
@@ -110,17 +110,17 @@ check.All(
 
 ## Capabilities
 
-| Category    | Builders                                           | Functions                                                                                   |
-| ----------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Strings     | `Str`, `OptStr`                                    | `Required`, `MinLen`, `MaxLen`, `Match`, `Prefix`, `Suffix`, `OneOf`, `Alpha`, `Slug`, etc. |
-| Numbers     | `Num`, `OptNum`, `Int`, `OptInt`                   | `Min`, `Max`, `Between`, `Positive`, `Negative`, `NonZero`, `MultipleOf`, `Percentage`      |
-| Slices      | `Slice`, `OptSlice`, `StrSlice`, `OptStrSlice`     | `NotEmpty`, `MinItems`, `Unique`, `ContainsAll`, `Each`, `AllSatisfy`, `Subset`             |
-| Formats     | (via `Str` methods)                                | `Email`, `URL`, `UUID`, `IP`, `CIDR`, `Semver`, `E164`, `CreditCard`, `JSON`, `Base64`      |
-| Comparison  | —                                                  | `Equal`, `NotEqual`, `GreaterThan`, `LessThan`, `EqualField`, `GreaterThanField`            |
-| Maps        | —                                                  | `NotEmptyMap`, `HasKey`, `HasKeys`, `OnlyKeys`, `EachKey`, `EachMapValue`, `UniqueValues`   |
-| Pointers    | —                                                  | `NotNil`, `Nil`, `NilOr`, `RequiredPtr`, `DefaultOr`, `Deref`                               |
-| Time        | —                                                  | `Before`, `After`, `InPast`, `InFuture`, `BetweenTime`, `WithinDuration`, `NotWeekend`      |
-| Aggregation | —                                                  | `All` (collect all errors), `First` (fail-fast), `Merge`, `Check[T]` (with tag verification)|
+| Category    | Builders                                       | Functions                                                                                    |
+| ----------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Strings     | `Str`, `OptStr`                                | `Required`, `MinLen`, `MaxLen`, `Match`, `Prefix`, `Suffix`, `OneOf`, `Alpha`, `Slug`, etc.  |
+| Numbers     | `Num`, `OptNum`, `Int`, `OptInt`               | `Min`, `Max`, `Between`, `Positive`, `Negative`, `NonZero`, `MultipleOf`, `Percentage`       |
+| Slices      | `Slice`, `OptSlice`, `StrSlice`, `OptStrSlice` | `NotEmpty`, `MinItems`, `Unique`, `ContainsAll`, `Each`, `AllSatisfy`, `Subset`              |
+| Formats     | (via `Str` methods)                            | `Email`, `URL`, `UUID`, `IP`, `CIDR`, `Semver`, `E164`, `CreditCard`, `JSON`, `Base64`       |
+| Comparison  | —                                              | `Equal`, `NotEqual`, `GreaterThan`, `LessThan`, `EqualField`, `GreaterThanField`             |
+| Maps        | —                                              | `NotEmptyMap`, `HasKey`, `HasKeys`, `OnlyKeys`, `EachKey`, `EachMapValue`, `UniqueValues`    |
+| Pointers    | —                                              | `NotNil`, `Nil`, `NilOr`, `RequiredPtr`, `DefaultOr`, `Deref`                                |
+| Time        | —                                              | `Before`, `After`, `InPast`, `InFuture`, `BetweenTime`, `WithinDuration`, `NotWeekend`       |
+| Aggregation | —                                              | `All` (collect all errors), `First` (fail-fast), `Merge`, `Check[T]` (with tag verification) |
 
 ## Validation Tracking
 
