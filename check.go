@@ -72,6 +72,14 @@ func (v *Validation) Failed() bool {
 	return v != nil && v.err != nil
 }
 
+// Err returns the validation error (nil if validation passed).
+func (v *Validation) Err() error {
+	if v == nil {
+		return nil
+	}
+	return v.err
+}
+
 // Result contains the aggregated outcome of multiple validations.
 type Result struct {
 	err     error

@@ -83,6 +83,27 @@ func TestValidation(t *testing.T) {
 			t.Error("should be failed")
 		}
 	})
+
+	t.Run("Err returns error", func(t *testing.T) {
+		v := &Validation{err: fieldErr("name", "is required"), field: "name", validators: []string{"required"}}
+		if v.Err() == nil {
+			t.Error("expected error")
+		}
+	})
+
+	t.Run("Err returns nil on passed", func(t *testing.T) {
+		v := &Validation{err: nil, field: "name", validators: []string{"required"}}
+		if v.Err() != nil {
+			t.Error("expected nil")
+		}
+	})
+
+	t.Run("Err returns nil on nil validation", func(t *testing.T) {
+		var v *Validation
+		if v.Err() != nil {
+			t.Error("expected nil")
+		}
+	})
 }
 
 func TestResult(t *testing.T) {
